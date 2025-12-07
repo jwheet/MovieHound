@@ -1,0 +1,3488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB Movie Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #3a983a 0%, #2a7a2a 100%);
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .left-panel {
+            width: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .right-panel {
+            width: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 18px;
+        }
+
+        .history-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #3a983a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+
+        .history-btn:hover {
+            background: #2a7a2a;
+        }
+
+        .main-content {
+            margin-top: 60px;
+        }
+
+        h1 {
+            color: #3a983a;
+            margin-bottom: 30px;
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            position: relative;
+            z-index: 500;  /* Below modals */
+        }
+
+        /* Modal elements need higher z-index */
+        .modal-content select,
+        .modal-content input[type="range"],
+        .modal-content input[type="text"],
+        .modal-content input[type="number"] {
+            z-index: 1002;  /* Above modal content for dropdowns */
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #3a983a;
+        }
+
+        .slider-container {
+            position: relative;
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #3a983a;
+            margin-bottom: 10px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            width: 100%;
+            cursor: text;
+        }
+
+        .slider-value:focus {
+            outline: none;
+            border-color: #3a983a;
+            background: #f8f8f8;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: #ddd;
+            outline: none;
+            padding: 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #3a983a;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #3a983a;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: #3a983a;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2a7a2a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: #49b649;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #1a5b1a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .counter-display {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #3a983a 0%, #2a7a2a 100%);
+            border-radius: 12px;
+            color: white;
+            display: none;
+        }
+
+        .counter-display.active {
+            display: block;
+        }
+
+        .counter-number {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .counter-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .download-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .download-section.active {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            color: #333;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            border: 2px solid #ddd;
+            position: relative;
+            z-index: 1001;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #3a983a;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .history-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            border-left: 4px solid #3a983a;
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .history-date {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .history-count {
+            font-weight: bold;
+            color: #3a983a;
+        }
+
+        /* Modal inputs and selects */
+        .modal-content input[type="text"],
+        .modal-content input[type="url"],
+        .modal-content input[type="number"],
+        .modal-content input[type="password"],
+        .modal-content select,
+        .modal-content textarea {
+            background: #f8f8f8;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        .modal-content input[type="text"]:focus,
+        .modal-content input[type="url"]:focus,
+        .modal-content input[type="number"]:focus,
+        .modal-content input[type="password"]:focus,
+        .modal-content select:focus,
+        .modal-content textarea:focus {
+            border-color: #3a983a;
+            outline: none;
+        }
+
+        .history-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .history-download {
+            padding: 8px 16px;
+            background: #49b649;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .history-download:hover {
+            background: #1a5b1a;
+        }
+
+        .history-delete {
+            padding: 8px 16px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .history-delete:hover {
+            background: #dc2626;
+        }
+
+        .no-history {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3a983a;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            display: inline-block;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #3a983a;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .toggle-state {
+            font-size: 14px;
+            color: #666;
+            margin-left: 10px;
+            min-width: 40px;
+        }
+
+        /* Right Panel & Torrent Converter Styles */
+        .right-panel {
+            overflow-y: auto;
+        }
+
+        .torrent-history-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #2a7a2a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+
+        .torrent-history-btn:hover {
+            background: #653a8a;
+        }
+
+        /* Multi-select dropdown styles */
+        .multi-select-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .multi-select-display {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .multi-select-display:focus {
+            outline: none;
+            border-color: #2a7a2a;
+        }
+
+        .selected-tag {
+            background: #2a7a2a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .selected-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .multi-select-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #2a7a2a;
+            border-radius: 8px;
+            margin-top: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .multi-select-options.active {
+            display: block;
+        }
+
+        .multi-select-option {
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .multi-select-option:hover {
+            background: #f0f0f0;
+        }
+
+        .multi-select-option input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        /* Quality selector styles */
+        .quality-selector-group {
+            margin-bottom: 25px;
+        }
+
+        .quality-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .quality-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .quality-btn.active {
+            background: #2a7a2a;
+            color: white;
+            border-color: #2a7a2a;
+        }
+
+        .quality-btn:hover:not(.active) {
+            border-color: #2a7a2a;
+            color: #2a7a2a;
+        }
+
+        /* Torrent counter display */
+        .torrent-counter-display {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #2a7a2a 0%, #3a983a 100%);
+            border-radius: 12px;
+            color: white;
+            display: none;
+        }
+
+        .torrent-counter-display.active {
+            display: block;
+        }
+
+        .status-message {
+            font-size: 14px;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        /* Error list section */
+        .error-list-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fef2f2;
+            border-radius: 8px;
+            border-left: 4px solid #ef4444;
+            display: none;
+        }
+
+        .error-list-section.active {
+            display: block;
+        }
+
+        .error-list-section h3 {
+            margin-bottom: 10px;
+            color: #ef4444;
+        }
+
+        #errorListContent {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .error-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error-item-info {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .manual-add-btn {
+            padding: 6px 12px;
+            background: #2a7a2a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .manual-add-btn:hover {
+            background: #653a8a;
+        }
+
+        /* Secondary button style */
+        .btn-secondary {
+            background: #2a7a2a;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #653a8a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+        }
+
+        /* Center download button */
+        .center-download-btn {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #3a983a 0%, #2a7a2a 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .center-download-btn:hover {
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Client grid */
+        .client-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            padding: 20px 0;
+        }
+
+        .client-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white !important;
+        }
+
+        .client-card:hover {
+            border-color: #3a983a;
+            background: #f8f9ff;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .client-card img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 10px;
+        }
+
+        .client-card span {
+            text-align: center;
+            font-weight: 600;
+            color: #333 !important;
+        }
+
+        /* Client buttons */
+        .client-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #3a983a;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .client-button:hover {
+            background: #3a983a;
+            color: white;
+        }
+
+        .client-button img {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Form groups for modal */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group input[type="password"]:focus {
+            outline: none;
+            border-color: #3a983a;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .test-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .test-result.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #49b649;
+        }
+
+        .test-result.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .info-box {
+            background: #e0e7ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #3730a3;
+            border-left: 4px solid #3a983a;
+        }
+
+        .client-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .send-progress {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .send-progress.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #3a983a 0%, #2a7a2a 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* Toggle Switch Styles */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #6ee76e;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Dark Mode Toggle - Sun/Moon Slider */
+        .dark-mode-toggle-wrapper {
+            position: fixed;
+            top: 20px;
+            right: 180px;
+            z-index: 1001;
+        }
+
+        .l {
+            display: block;
+            margin-bottom: 1.5em;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 0.75em;
+            box-shadow: 0.125em 0.125em 0 0.125em rgba(0, 0, 0, 0.3) inset;
+            color: #fdea7b;
+            display: inline-flex;
+            align-items: center;
+            margin: auto;
+            padding: 0.15em;
+            width: 3em;
+            height: 1.5em;
+            transition:
+                background-color 0.3s ease-out,
+                box-shadow 0.3s ease-out;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .l:before,
+        .l:after {
+            content: "";
+            display: block;
+        }
+
+        .l:before {
+            background-color: #d7d7d7;
+            border-radius: 50%;
+            width: 1.2em;
+            height: 1.2em;
+            transition:
+                background-color 0.3s ease-out,
+                transform 0.3s ease-out;
+            z-index: 1;
+        }
+
+        .l:after {
+            background:
+                linear-gradient(transparent 50%, rgba(0, 0, 0, 0.15) 0) 0 50% / 50% 100%,
+                repeating-linear-gradient(90deg, #bbb 0, #bbb, #bbb 20%, #999 20%, #999 40%)
+                    0 50% / 50% 100%,
+                radial-gradient(circle at 50% 50%, #888 25%, transparent 26%);
+            background-repeat: no-repeat;
+            border: 0.25em solid transparent;
+            border-left: 0.4em solid #d8d8d8;
+            border-right: 0 solid transparent;
+            transition:
+                border-left-color 0.3s ease-out,
+                transform 0.3s ease-out;
+            transform: translateX(-22.5%);
+            transform-origin: 25% 50%;
+            width: 1.2em;
+            height: 1em;
+            box-sizing: border-box;
+        }
+
+        /* Add explicit unchecked state for light bulb shine */
+        .l:not(:checked):before {
+            background-color: #fdea7b;  /* Yellow light bulb that PERSISTS */
+        }
+
+        /* Checked */
+        .l:checked {
+            background-color: rgba(0, 0, 0, 0.45);
+            box-shadow: 0.125em 0.125em 0 0.125em rgba(0, 0, 0, 0.1) inset;
+        }
+
+        .l:checked:before {
+            background-color: currentColor;
+            transform: translateX(125%);
+        }
+
+        .l:checked:after {
+            border-left-color: currentColor;
+            transform: translateX(-2.5%) rotateY(180deg);
+        }
+
+        /* Other States */
+        .l:focus {
+            outline: 0;
+        }
+
+        
+
+
+        /* Dark Mode Styles - Forest Theme Preserved */
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a2f1a 0%, #0d1f0d 100%);
+            color: #e8f5e8;
+        }
+
+        body.dark-mode .container {
+            background: rgba(26, 47, 26, 0.95);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode .left-panel,
+        body.dark-mode .right-panel {
+            background: rgba(19, 36, 19, 0.8);
+            border-right: 1px solid #2a5a2a;
+        }
+
+        body.dark-mode .main-content {
+            background: rgba(26, 47, 26, 0.6);
+            border: 2px solid #2a5a2a;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        body.dark-mode h1 {
+            color: #6ee76e;
+            text-shadow: 0 0 10px rgba(110, 231, 110, 0.3);
+        }
+
+        body.dark-mode label {
+            color: #c8e6c8;
+        }
+
+        body.dark-mode input,
+        body.dark-mode select,
+        body.dark-mode textarea {
+            background: rgba(35, 56, 35, 0.8);
+            color: #e8f5e8;
+            border: 2px solid #3a6a3a;
+        }
+
+        body.dark-mode input:focus,
+        body.dark-mode select:focus,
+        body.dark-mode textarea:focus {
+            border-color: #5a9a5a;
+            box-shadow: 0 0 8px rgba(90, 154, 90, 0.4);
+        }
+
+        /* Manual ID section - reduce focus glow and set proper z-index */
+        #manualIdInput,
+        #manualIdListType,
+        #manualIdTargetList {
+            z-index: 500 !important;  /* Below modals */
+        }
+
+        /* Subtle focus states without excessive glow */
+        #manualIdInput:focus,
+        #manualIdListType:focus,
+        #manualIdTargetList:focus {
+            box-shadow: 0 0 4px rgba(90, 154, 90, 0.2);  /* Reduced from 8px/0.4 */
+        }
+
+        body.dark-mode #manualIdInput:focus,
+        body.dark-mode #manualIdListType:focus,
+        body.dark-mode #manualIdTargetList:focus {
+            box-shadow: 0 0 4px rgba(90, 154, 90, 0.2);  /* Subtle glow in dark mode */
+        }
+
+        body.dark-mode .movie-list-item {
+            background: rgba(35, 56, 35, 0.6);
+            border: 1px solid #3a6a3a;
+            color: #e8f5e8;
+        }
+
+        body.dark-mode .movie-list-item:hover {
+            background: rgba(45, 76, 45, 0.8);
+            border-color: #5a9a5a;
+        }
+
+        body.dark-mode .quality-btn {
+            background: rgba(35, 56, 35, 0.8);
+            color: #c8e6c8;
+            border: 2px solid #3a6a3a;
+        }
+
+        body.dark-mode .quality-btn:hover:not(.active) {
+            border-color: #5a9a5a;
+            background: rgba(45, 76, 45, 0.9);
+        }
+
+        body.dark-mode .quality-btn.active {
+            background: linear-gradient(135deg, #2a7a2a 0%, #1f5a1f 100%);
+            color: white;
+            border-color: #5a9a5a;
+            box-shadow: 0 0 12px rgba(90, 154, 90, 0.5);
+        }
+
+        body.dark-mode .btn {
+            background: linear-gradient(135deg, #3a983a 0%, #2a7a2a 100%);
+            border: 2px solid #5a9a5a;
+        }
+
+        body.dark-mode .btn:hover {
+            background: linear-gradient(135deg, #2a7a2a 0%, #1f5a1f 100%);
+            box-shadow: 0 0 16px rgba(90, 154, 90, 0.6);
+        }
+
+        body.dark-mode .btn-secondary {
+            background: linear-gradient(135deg, #3a983a 0%, #2a7a2a 100%);
+        }
+
+        body.dark-mode .history-btn,
+        body.dark-mode .center-download-btn {
+            background: linear-gradient(135deg, #3a983a 0%, #2a7a2a 100%);
+            border: 2px solid #5a9a5a;
+        }
+
+        body.dark-mode .history-btn:hover,
+        body.dark-mode .center-download-btn:hover {
+            background: linear-gradient(135deg, #2a7a2a 0%, #1f5a1f 100%);
+            box-shadow: 0 0 12px rgba(90, 154, 90, 0.5);
+        }
+
+        body.dark-mode .control-group {
+            border-bottom: 1px solid #2a5a2a;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        body.dark-mode .multi-select-display {
+            background: rgba(35, 56, 35, 0.8);
+            border: 2px solid #3a6a3a;
+            color: #e8f5e8;
+        }
+
+        body.dark-mode .multi-select-options {
+            background: rgba(26, 47, 26, 0.98);
+            border: 2px solid #3a6a3a;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode .multi-select-option:hover {
+            background: rgba(58, 152, 58, 0.3);
+        }
+
+        body.dark-mode .counter-display,
+        body.dark-mode .torrent-counter-display {
+            background: rgba(26, 47, 26, 0.8);
+            border: 2px solid #3a6a3a;
+        }
+
+        body.dark-mode .counter-number {
+            color: #6ee76e;
+            text-shadow: 0 0 10px rgba(110, 231, 110, 0.4);
+        }
+
+        body.dark-mode .progress-bar {
+            background: rgba(35, 56, 35, 0.6);
+        }
+
+        body.dark-mode .progress-fill {
+            background: linear-gradient(90deg, #3a983a, #5ab95a);
+            box-shadow: 0 0 10px rgba(90, 185, 90, 0.5);
+        }
+
+        body.dark-mode .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        body.dark-mode .toggle-switch input:checked + .toggle-slider {
+            background-color: #6ee76e;
+        }
+
+        /* Number Input Dark Mode */
+        body.dark-mode .slider-value {
+            background: #2a2a2a;
+            color: #6ee76e;
+            border-color: #444;
+        }
+
+        body.dark-mode .slider-value:focus {
+            background: #1a1a1a;
+            border-color: #6ee76e;
+        }
+
+        /* Theater Toggle Dark Mode */
+        body.dark-mode .toggle-container {
+            background: #2a2a2a;
+            border-color: #444;
+        }
+
+        body.dark-mode .toggle-label {
+            color: #ffffff;
+        }
+
+        body.dark-mode input:checked + .toggle-slider {
+            background-color: #6ee76e;
+        }
+
+        body.dark-mode .toggle-state {
+            color: #cccccc;
+        }
+
+        /* Client Cards Dark Mode */
+        body.dark-mode .client-card {
+            background: #2a2a2a !important;
+            border-color: #444 !important;
+        }
+
+        body.dark-mode .client-card:hover {
+            background: #3a3a3a !important;
+            border-color: #6ee76e !important;
+            box-shadow: 0 5px 15px rgba(110, 231, 110, 0.2);
+        }
+
+        body.dark-mode .client-card span {
+            color: #e8f5e8 !important;
+        }
+
+        /* Client Button Dark Mode */
+        body.dark-mode .client-button {
+            background: #2a2a2a !important;
+            border-color: #6ee76e !important;
+            color: #e8f5e8 !important;
+        }
+
+        body.dark-mode .client-button:hover {
+            background: #6ee76e !important;
+            color: #1a1a2e !important;
+        }
+
+        /* Modal Dark Mode */
+        body.dark-mode .modal-content {
+            background: #2a2a2a;
+            color: #ffffff;
+            border-color: #444;
+        }
+
+        body.dark-mode .modal-header h2 {
+            color: #4CAF50;
+        }
+
+        body.dark-mode .close-btn {
+            color: #999;
+        }
+
+        body.dark-mode .close-btn:hover {
+            color: #ffffff;
+        }
+
+        body.dark-mode .history-item {
+            background: #1a1a2e;
+        }
+
+        body.dark-mode .history-date {
+            color: #cccccc;
+        }
+
+        body.dark-mode .history-count {
+            color: #4CAF50;
+        }
+
+        body.dark-mode .modal-content input[type="text"],
+        body.dark-mode .modal-content input[type="url"],
+        body.dark-mode .modal-content input[type="number"],
+        body.dark-mode .modal-content input[type="password"],
+        body.dark-mode .modal-content select,
+        body.dark-mode .modal-content textarea {
+            background: #1a1a2e;
+            color: #ffffff;
+            border-color: #444;
+        }
+
+        body.dark-mode .modal-content input:focus,
+        body.dark-mode .modal-content select:focus,
+        body.dark-mode .modal-content textarea:focus {
+            border-color: #4CAF50;
+        }
+
+    </style>
+</head>
+<body>
+    <button class="center-download-btn" onclick="openDownloadManager()">Download</button>
+    <div class="dark-mode-toggle-wrapper">
+        <input class="l" type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" title="Toggle Dark Mode" />
+    </div>
+
+    <div class="container">
+        <div class="left-panel">
+            <button class="history-btn" onclick="openHistory()">History</button>
+
+            <div class="main-content">
+                <h1 id="movieFinderTitle">TMDB Movie Finder</h1>
+                <div style="text-align: center; margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sourceToggle" onchange="toggleMovieSource()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span style="font-size: 14px;">Use IMDB</span>
+                </div>
+
+                <div class="control-group">
+                    <label for="language">Original Language</label>
+                    <select id="language">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ko">Korean</option>
+                        <option value="zh">Chinese</option>
+                        <option value="ru">Russian</option>
+                        <option value="ar">Arabic</option>
+                        <option value="hi">Hindi</option>
+                        <option value="th">Thai</option>
+                        <option value="tr">Turkish</option>
+                        <option value="pl">Polish</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="movieCount">Number of Movies</label>
+                    <div class="slider-container">
+                        <input type="number" class="slider-value" id="sliderValue" min="1" max="10000" value="1">
+                        <input type="range" id="movieCount" min="1" max="10000" value="1">
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <span class="toggle-label">Include Movies in Theaters</span>
+                    <div style="display: flex; align-items: center;">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="includeInTheaters" onchange="updateToggleState()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-state" id="toggleState">OFF</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="findBtn" onclick="findMovies()">Find Movies</button>
+
+                <div class="counter-display" id="counterDisplay">
+                    <div class="counter-label">Movies Found</div>
+                    <div class="counter-number" id="counterNumber">0</div>
+                    <div class="counter-label">of <span id="targetNumber">0</span></div>
+                </div>
+
+                <div class="download-section" id="downloadSection">
+                    <button class="btn btn-success" id="downloadBtn" onclick="downloadList()">Download Movie List</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <button class="torrent-history-btn" onclick="openTorrentHistory()">Torrent History</button>
+
+            <div class="main-content">
+                <h1>Torrent Converter</h1>
+
+                <div class="control-group">
+                    <label>Select Movie Lists to Convert</label>
+                    <div class="multi-select-dropdown" id="movieListsDropdown">
+                        <div class="multi-select-display" id="multiSelectDisplay" onclick="toggleDropdown()">
+                            <span style="color: #999;">Select lists...</span>
+                        </div>
+                        <div class="multi-select-options" id="multiSelectOptions">
+                            <!-- Options populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quality-selector-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="margin: 0;">Preferred Quality</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="forceQualityToggle" onchange="toggleForceQuality()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span style="font-size: 13px; font-weight: normal;">Force One Quality</span>
+                        </div>
+                    </div>
+                    <div class="quality-buttons">
+                        <button class="quality-btn" onclick="selectQuality('480p')">480p</button>
+                        <button class="quality-btn" onclick="selectQuality('720p')">720p</button>
+                        <button class="quality-btn active" onclick="selectQuality('1080p')">1080p</button>
+                        <button class="quality-btn" onclick="selectQuality('2160p')">2160p</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" id="convertBtn" onclick="convertToTorrents()">Convert to Torrents</button>
+
+                <div class="torrent-counter-display" id="torrentCounterDisplay">
+                    <div class="counter-label">Processing Movies</div>
+                    <div class="counter-number" id="torrentCounterNumber">0</div>
+                    <div class="counter-label">of <span id="torrentTargetNumber">0</span></div>
+                    <div class="status-message" id="torrentStatusMessage"></div>
+                </div>
+
+                <div class="download-section" id="torrentDownloadSection">
+                    <button class="btn btn-success" id="downloadTorrentBtn" onclick="downloadTorrentList()">Download Torrent List</button>
+                </div>
+
+                <div class="error-list-section" id="errorListSection">
+                    <h3 style="color: #ef4444; margin-bottom: 10px;">Missing Movies</h3>
+                    <div id="errorListContent"></div>
+                    <button class="btn btn-success" style="margin-top: 10px;" id="downloadErrorBtn" onclick="downloadErrorList()">Download Error List</button>
+                </div>
+
+                <div class="control-group" style="border: 2px solid #3a983a; border-radius: 8px; padding: 15px; margin-top: 30px; margin-bottom: 20px;">
+                    <label style="color: #3a983a; font-size: 16px; margin-bottom: 12px;">Manual ID Addition</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="manualIdInput" placeholder="Enter IMDB or TMDB ID" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                        <select id="manualIdListType" style="width: 150px; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            <option value="movie">Movie List</option>
+                            <option value="torrent">Torrent List</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="manualIdTargetList" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            <option value="">Select target list...</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="addManualId()" style="width: 120px;">Add ID</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Download History</h2>
+                <button class="close-btn" onclick="closeHistory()">&times;</button>
+            </div>
+            <div id="historyContent">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="torrentHistoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Torrent Conversion History</h2>
+                <button class="close-btn" onclick="closeTorrentHistory()">&times;</button>
+            </div>
+
+            <div id="torrentHistoryContent">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="manualMagnetModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Manual Magnet Link</h2>
+                <button class="close-btn" onclick="closeManualMagnet()">&times;</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong id="manualMovieTitle"></strong>
+                <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                    TMDB: <span id="manualTmdbId"></span> | IMDB: <span id="manualImdbId"></span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Magnet Link</label>
+                <textarea id="manualMagnetInput" style="width: 100%; min-height: 100px; padding: 10px; border: 2px solid #ddd; border-radius: 8px;" placeholder="Paste magnet link here..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="submitManualMagnet()">Add Magnet Link</button>
+        </div>
+    </div>
+
+    <!-- Download Manager Modal -->
+    <div class="modal" id="downloadManagerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Download Clients</h2>
+                <button class="close-btn" onclick="closeDownloadManager()">&times;</button>
+            </div>
+
+            <div id="configuredClientsList" class="client-list">
+                <!-- Configured clients will appear here -->
+            </div>
+
+            <button class="btn btn-secondary" onclick="openClientSelection()">+ Add Download Client</button>
+            <button class="btn btn-secondary" onclick="openCustomTrackerModal()" style="margin-left: 10px;">+ Add Custom Tracker</button>
+        </div>
+    </div>
+
+    <!-- Custom Tracker Modal -->
+    <div class="modal" id="customTrackerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Custom Tracker</h2>
+                <button class="close-btn" onclick="closeCustomTrackerModal()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label>Tracker Name:</label>
+                <input type="text" id="trackerName" placeholder="My Custom Tracker">
+            </div>
+
+            <div class="form-group">
+                <label>Tracker URL:</label>
+                <input type="text" id="trackerUrl" placeholder="http://tracker.example.com:8080/announce">
+                <small style="color: #666;">This will be added to all torrents sent to clients</small>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="saveCustomTracker()">Save Tracker</button>
+            </div>
+
+            <div id="savedTrackers" style="margin-top: 20px;">
+                <!-- Saved trackers will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Selection Modal -->
+    <div class="modal" id="clientSelectionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Download Client</h2>
+                <button class="close-btn" onclick="closeClientSelection()">&times;</button>
+            </div>
+
+            <div class="client-grid" id="clientGrid">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Configuration Modal -->
+    <div class="modal" id="clientConfigModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Configure <span id="clientTypeName"></span></h2>
+                <button class="close-btn" onclick="closeClientConfig()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label>Name:</label>
+                <input type="text" id="clientName" placeholder="My qBittorrent">
+            </div>
+
+            <div class="form-group">
+                <label>Host:</label>
+                <input type="text" id="clientHost" placeholder="192.168.1.100 or localhost">
+            </div>
+
+            <div class="form-group">
+                <label>Port:</label>
+                <input type="number" id="clientPort" value="8080">
+            </div>
+
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="clientUsername">
+            </div>
+
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="clientPassword">
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="clientSsl">
+                    Use HTTPS/SSL
+                </label>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="testClientConnection()">Test Connection</button>
+                <button class="btn btn-success" id="saveClientBtn" disabled onclick="saveClient()">Save</button>
+            </div>
+
+            <div id="testResult"></div>
+        </div>
+    </div>
+
+    <!-- Send to Client Modal -->
+    <div class="modal" id="sendToClientModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Send Torrents to <span id="selectedClientName"></span></h2>
+                <button class="close-btn" onclick="closeSendToClient()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label>Select Torrent List:</label>
+                <select id="torrentListSelect">
+                    <option value="">Choose a torrent list...</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="categoryGroup">
+                <label>Category/Label (optional):</label>
+                <input type="text" id="categoryInput" placeholder="Movies">
+                <small style="color: #666;">For clients that support categories (qBittorrent, Deluge, etc.)</small>
+            </div>
+
+            <div class="info-box">
+                Files will be renamed to: "Movie Title (Year) [Quality]"
+            </div>
+
+            <button class="btn btn-primary" onclick="sendTorrentsToClient()">Send to Client</button>
+
+            <div class="send-progress" id="sendProgress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+                </div>
+                <div id="progressText">Sending torrents...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFilename = null;
+        let eventSource = null;
+
+        // Update number input when slider changes
+        document.getElementById('movieCount').addEventListener('input', function() {
+            document.getElementById('sliderValue').value = this.value;
+        });
+
+        // Update slider when number input changes
+        document.getElementById('sliderValue').addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                value = 1;
+            } else if (value > 10000) {
+                value = 10000;
+            }
+            this.value = value;
+            document.getElementById('movieCount').value = value;
+        });
+
+        // Ensure slider starts at correct position on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            // Display ASCII art logo
+            console.log(String.raw`
+
+                                            ==
+                                          =======
+                                       ===========
+                                         =============         *===
+                                     ================       %*+====+
+                                       =============     %%#+%======
+                                         ==========+++++  %%*==========
+                                      =============++++    %%=========
+                                       ===========+++++#####=========
+                                         =========++++  ####============
+                                       ==============++++###==========
+                                       %============++++***=========
+                                     +#%%+==========++*****============
+                                      +**%#========+++=#***+=========
+                                      ==*+#========+++=##***========
+                               +== +++===+#%+======++==*****=======
+                               ===+++++===========+*====****=====+
+                             ====================+++=====##*=++++===
+                            =========+++=========++========+++++=====
+                              ====+===+==+====+==++=====+%%*++++======
+                             =+=======+=+++==+===++======++++++======
+                               ======+====*==*===++=====+++++++=======
+                               +=========+*%*+==+++=====++++++======
+                                 ========+*##*==+++=====++++++++++*
+                                  +==++==+=*#*==+++=====++++++==++++
+                                    =====***#+==+++===++++++++++++
+                                      ===+#%*===++++=   +++++++++
+                                      ====+%*==+=+==      ++++
+                                      ====+ *==+=+==     +===
+                                       ====+*==+=+==     ====
+                                       ====+*==+=+=     ====
+                                       ==+==#==++==    =====
+                                       ==+==*==++==    ====
+                                        ==*=*===+==   =====
+                                        #***#======%%@====
+                                        %*%%###############
+                                         *=*#===+== ==+==
+                                          ==%===*==#==+==
+                                          *=%========++=
+                                          %+*==+=+==++==
+                                          %%%*+++%**####%
+                                           +*########*==
+                                           =**==+#==++=
+                                           =++==+*=====
+                                           =====++=====
+                                           =====++=====
+                                           ============
+                                           ======+=====
+                                           ======++====
+                                            ==+==++====
+                                            ==*==++===
+                                            == == ++==
+                              ____.       .__                   __
+                             |    |_  _  _|  |__   ____   _____/  |_
+                             |    \ \/ \/ /  |  \_/ __ \_/ __ \   __\
+                         /\__|    |\     /|   Y  \  ___/\  ___/|  |
+                         \________| \/\_/ |___|  /\___  >\___  >__|
+                                           \/     \/     \/
+            `);
+
+            const slider = document.getElementById('movieCount');
+            const sliderValue = document.getElementById('sliderValue');
+
+            // Sync values on load
+            sliderValue.value = slider.value;
+
+            // Force browser to render slider at correct position
+            slider.style.background = `linear-gradient(to right, #3a983a 0%, #3a983a ${(slider.value / slider.max) * 100}%, #ddd ${(slider.value / slider.max) * 100}%, #ddd 100%)`;
+        });
+
+        function updateToggleState() {
+            const checkbox = document.getElementById('includeInTheaters');
+            const stateText = document.getElementById('toggleState');
+            stateText.textContent = checkbox.checked ? 'ON' : 'OFF';
+        }
+
+        function findMovies() {
+            const language = document.getElementById('language').value;
+            const targetCount = parseInt(document.getElementById('movieCount').value);
+            const includeInTheaters = document.getElementById('includeInTheaters').checked;
+            const findBtn = document.getElementById('findBtn');
+            const counterDisplay = document.getElementById('counterDisplay');
+            const counterNumber = document.getElementById('counterNumber');
+            const targetNumber = document.getElementById('targetNumber');
+            const downloadSection = document.getElementById('downloadSection');
+
+            // Reset UI
+            findBtn.disabled = true;
+            counterDisplay.classList.add('active');
+            downloadSection.classList.remove('active');
+            counterNumber.textContent = '0';
+            targetNumber.textContent = targetCount;
+            currentFilename = null;
+
+            // Close existing connection if any
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            // Create SSE connection
+            eventSource = new EventSource(`/api/find-movies?dummy=${Date.now()}`);
+
+            // Send request via fetch POST
+            fetch('/api/find-movies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ language, targetCount, includeInTheaters, useIMDB })
+            }).then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                function read() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            findBtn.disabled = false;
+                            return;
+                        }
+
+                        const text = decoder.decode(value);
+                        const lines = text.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = JSON.parse(line.substring(6));
+
+                                if (data.error) {
+                                    alert('Error: ' + data.error);
+                                    findBtn.disabled = false;
+                                    return;
+                                }
+
+                                if (data.complete) {
+                                    counterNumber.textContent = data.count;
+                                    currentFilename = data.filename;
+                                    downloadSection.classList.add('active');
+                                    findBtn.disabled = false;
+                                    // Reload movie lists for torrent converter
+                                    loadMovieLists();
+                                } else {
+                                    counterNumber.textContent = data.count;
+                                }
+                            }
+                        }
+
+                        read();
+                    });
+                }
+
+                read();
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+                findBtn.disabled = false;
+            });
+        }
+
+        function downloadList() {
+            if (currentFilename) {
+                window.location.href = `/api/download/${currentFilename}`;
+            }
+        }
+
+        function openHistory() {
+            const modal = document.getElementById('historyModal');
+            const historyContent = document.getElementById('historyContent');
+            modal.classList.add('active');
+
+            historyContent.innerHTML = '<div class="loading-spinner"></div>';
+
+            fetch('/api/history')
+                .then(response => response.json())
+                .then(history => {
+                    if (history.length === 0) {
+                        historyContent.innerHTML = '<div class="no-history">No download history yet</div>';
+                    } else {
+                        historyContent.innerHTML = history.reverse().map(item => `
+                            <div class="history-item" id="history-${item.filename}">
+                                <div class="history-item-header">
+                                    <div class="history-date">${item.date}</div>
+                                    <div class="history-count">${item.count} movies</div>
+                                </div>
+                                <div>Language: ${item.language}</div>
+                                <div class="history-actions">
+                                    <button class="history-download" onclick="downloadHistoryItem('${item.filename}')">
+                                        Download
+                                    </button>
+                                    <button class="history-delete" onclick="deleteHistoryItem('${item.filename}')">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                })
+                .catch(error => {
+                    historyContent.innerHTML = '<div class="no-history">Error loading history</div>';
+                    console.error('Error:', error);
+                });
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').classList.remove('active');
+        }
+
+        function downloadHistoryItem(filename) {
+            window.location.href = `/api/download/${filename}`;
+        }
+
+        function deleteHistoryItem(filename) {
+            if (!confirm('Are you sure you want to delete this list? This will also remove all movie IDs from the global deduplication system.')) {
+                return;
+            }
+
+            fetch(`/api/delete/${filename}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the item from the UI
+                    const element = document.getElementById(`history-${filename}`);
+                    if (element) {
+                        element.remove();
+                    }
+
+                    // Check if there are any history items left
+                    const historyContent = document.getElementById('historyContent');
+                    if (historyContent.querySelectorAll('.history-item').length === 0) {
+                        historyContent.innerHTML = '<div class="no-history">No download history yet</div>';
+                    }
+                } else {
+                    alert('Error deleting list: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error deleting list: ' + error.message);
+                console.error('Error:', error);
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('historyModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHistory();
+            }
+        });
+
+        // Torrent conversion variables
+        let selectedLists = [];
+        let selectedQuality = '1080p';
+        let currentTorrentFilename = null;
+        let currentErrorFilename = null;
+        let availableLists = [];
+
+        // Load movie lists on page load
+        async function loadMovieLists() {
+            try {
+                const response = await fetch('/api/movie-lists');
+                availableLists = await response.json();
+            } catch (error) {
+                console.error('Error loading movie lists:', error);
+            }
+        }
+
+        // Toggle dropdown visibility
+        function toggleDropdown() {
+            const dropdown = document.getElementById('multiSelectOptions');
+            dropdown.classList.toggle('active');
+
+            if (dropdown.classList.contains('active')) {
+                renderDropdownOptions();
+            }
+        }
+
+        // Render dropdown options
+        function renderDropdownOptions() {
+            const optionsDiv = document.getElementById('multiSelectOptions');
+            optionsDiv.innerHTML = availableLists.map(list => `
+                <div class="multi-select-option" onclick="toggleListSelection('${list.filename}', event)">
+                    <input type="checkbox" ${selectedLists.includes(list.filename) ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <span>${list.displayName} (${list.count} movies)</span>
+                </div>
+            `).join('');
+        }
+
+        // Toggle list selection
+        function toggleListSelection(filename, event) {
+            event.stopPropagation();
+
+            const index = selectedLists.indexOf(filename);
+            if (index === -1) {
+                selectedLists.push(filename);
+            } else {
+                selectedLists.splice(index, 1);
+            }
+
+            updateSelectedDisplay();
+            renderDropdownOptions();
+        }
+
+        // Update selected lists display
+        function updateSelectedDisplay() {
+            const display = document.getElementById('multiSelectDisplay');
+
+            if (selectedLists.length === 0) {
+                display.innerHTML = '<span style="color: #999;">Select lists...</span>';
+            } else {
+                display.innerHTML = selectedLists.map(filename => {
+                    const list = availableLists.find(l => l.filename === filename);
+                    const displayName = list ? list.displayName : filename;
+                    return `
+                        <div class="selected-tag">
+                            ${displayName}
+                            <span class="remove" onclick="removeList('${filename}', event)">&times;</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Remove list from selection
+        function removeList(filename, event) {
+            event.stopPropagation();
+            const index = selectedLists.indexOf(filename);
+            if (index !== -1) {
+                selectedLists.splice(index, 1);
+                updateSelectedDisplay();
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('movieListsDropdown');
+            if (dropdown && !dropdown.contains(event.target)) {
+                document.getElementById('multiSelectOptions').classList.remove('active');
+            }
+        });
+
+        // Select quality
+        function selectQuality(quality) {
+            selectedQuality = quality;
+            document.querySelectorAll('.quality-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Convert to torrents
+        function convertToTorrents() {
+            if (selectedLists.length === 0) {
+                alert('Please select at least one movie list');
+                return;
+            }
+
+            const convertBtn = document.getElementById('convertBtn');
+            const counterDisplay = document.getElementById('torrentCounterDisplay');
+            const counterNumber = document.getElementById('torrentCounterNumber');
+            const targetNumber = document.getElementById('torrentTargetNumber');
+            const statusMessage = document.getElementById('torrentStatusMessage');
+            const downloadSection = document.getElementById('torrentDownloadSection');
+            const errorSection = document.getElementById('errorListSection');
+
+            // Reset UI
+            convertBtn.disabled = true;
+            counterDisplay.classList.add('active');
+            downloadSection.classList.remove('active');
+            errorSection.classList.remove('active');
+            counterNumber.textContent = '0';
+            targetNumber.textContent = '0';
+            statusMessage.textContent = 'Initializing...';
+            currentTorrentFilename = null;
+            currentErrorFilename = null;
+
+            // Send conversion request
+            fetch('/api/convert-to-torrents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filenames: selectedLists,
+                    quality: selectedQuality,
+                    forceQuality: forceQuality
+                })
+            }).then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                function read() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            convertBtn.disabled = false;
+                            return;
+                        }
+
+                        const text = decoder.decode(value);
+                        const lines = text.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = JSON.parse(line.substring(6));
+
+                                if (data.error) {
+                                    alert('Error: ' + data.error);
+                                    convertBtn.disabled = false;
+                                    counterDisplay.classList.remove('active');
+                                    return;
+                                }
+
+                                if (data.complete) {
+                                    counterNumber.textContent = data.totalCount;
+                                    targetNumber.textContent = data.totalCount;
+                                    statusMessage.textContent = `Complete! ${data.successCount} successful, ${data.errorCount} failed | Total Size: ${data.totalSize}`;
+                                    currentTorrentFilename = data.resultsFilename;
+                                    currentErrorFilename = data.errorsFilename;
+                                    downloadSection.classList.add('active');
+
+                                    if (data.errorCount > 0 && data.errorsFilename) {
+                                        loadErrorList(data.errorsFilename);
+                                    }
+
+                                    convertBtn.disabled = false;
+                                } else {
+                                    counterNumber.textContent = data.processed;
+                                    targetNumber.textContent = data.total;
+                                    const sizeText = data.totalSize ? ` | ${data.totalSize}` : '';
+                                    statusMessage.textContent = `Processing: ${data.current}${sizeText}`;
+                                }
+                            }
+                        }
+
+                        read();
+                    });
+                }
+
+                read();
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+                convertBtn.disabled = false;
+                counterDisplay.classList.remove('active');
+            });
+        }
+
+        // Download torrent list
+        function downloadTorrentList() {
+            if (currentTorrentFilename) {
+                window.location.href = `/api/download-torrent/${currentTorrentFilename}`;
+            }
+        }
+
+        // Download error list
+        function downloadErrorList() {
+            if (currentErrorFilename) {
+                window.location.href = `/api/download-torrent/${currentErrorFilename}`;
+            }
+        }
+
+        // Load error list
+        async function loadErrorList(filename) {
+            try {
+                const response = await fetch(`/api/download-torrent/${filename}`);
+                const text = await response.text();
+                const lines = text.split('\n').slice(1); // Skip header
+
+                const errorSection = document.getElementById('errorListSection');
+                const errorContent = document.getElementById('errorListContent');
+
+                errorContent.innerHTML = lines.filter(l => l.trim()).map(line => {
+                    const parts = line.split('\t');
+                    return `
+                        <div class="error-item">
+                            <div class="error-item-info">
+                                <strong>${parts[1]}</strong> (${parts[4]})<br>
+                                <small>TMDB: ${parts[3]} | IMDB: ${parts[2]} | ${parts[5]}</small>
+                            </div>
+                            <button class="manual-add-btn" onclick="openManualMagnet('${parts[1]}', '${parts[3]}', '${parts[2]}')">
+                                Add Magnet
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+                errorSection.classList.add('active');
+            } catch (error) {
+                console.error('Error loading error list:', error);
+            }
+        }
+
+        // Open manual magnet modal
+        function openManualMagnet(title, tmdbId, imdbId) {
+            document.getElementById('manualMovieTitle').textContent = title;
+            document.getElementById('manualTmdbId').textContent = tmdbId;
+            document.getElementById('manualImdbId').textContent = imdbId;
+            document.getElementById('manualMagnetInput').value = '';
+            document.getElementById('manualMagnetModal').classList.add('active');
+        }
+
+        // Close manual magnet modal
+        function closeManualMagnet() {
+            document.getElementById('manualMagnetModal').classList.remove('active');
+        }
+
+        // Submit manual magnet
+        async function submitManualMagnet() {
+            const magnetLink = document.getElementById('manualMagnetInput').value.trim();
+            const tmdbId = document.getElementById('manualTmdbId').textContent;
+            const title = document.getElementById('manualMovieTitle').textContent;
+
+            if (!magnetLink.startsWith('magnet:')) {
+                alert('Invalid magnet link');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/add-manual-magnet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        errorsFilename: currentErrorFilename,
+                        tmdbId: tmdbId,
+                        magnetLink: magnetLink
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`Magnet link added successfully!\nAdded: ${data.movieName}`);
+                    closeManualMagnet();
+
+                    // Remove the item from error list display
+                    if (currentErrorFilename) {
+                        const errorContent = document.getElementById('errorListContent');
+                        const errorItems = errorContent.querySelectorAll('.error-item');
+
+                        // Find and remove the error item for this movie
+                        errorItems.forEach(item => {
+                            const itemTitle = item.querySelector('strong').textContent;
+                            if (itemTitle === title) {
+                                item.remove();
+                            }
+                        });
+
+                        // If no more errors, hide the section
+                        if (errorContent.children.length === 0) {
+                            document.getElementById('errorListSection').classList.remove('active');
+                        }
+                    }
+                } else {
+                    alert('Failed to add magnet link: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error adding manual magnet:', error);
+                alert('Failed to add magnet link');
+            }
+        }
+
+        // Open torrent history
+        // Global variable to track if we're checking for active jobs
+        let activeJobCheckInterval = null;
+
+        function openTorrentHistory() {
+            const modal = document.getElementById('torrentHistoryModal');
+            const historyContent = document.getElementById('torrentHistoryContent');
+            modal.classList.add('active');
+
+            historyContent.innerHTML = '<div class="loading-spinner"></div>';
+
+            // Keep checking every 500ms while modal is open (fast updates)
+            if (activeJobCheckInterval) {
+                clearInterval(activeJobCheckInterval);
+            }
+            activeJobCheckInterval = setInterval(() => {
+                checkAndDisplayActiveJobs();
+            }, 500);
+
+            fetch('/api/torrent-history')
+                .then(response => response.json())
+                .then(history => {
+                    if (history.length === 0) {
+                        historyContent.innerHTML = '<div class="no-history">No conversion history yet</div>';
+                    } else {
+                        const combineButton = `
+                            <div id="combineSection" style="margin-bottom: 15px; padding: 10px; background: #2a2a2a; border-radius: 8px; display: none; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <input type="checkbox" id="selectAllConversions" onchange="toggleSelectAllConversions(this.checked)" style="margin-right: 8px;">
+                                    <label for="selectAllConversions" style="cursor: pointer; font-weight: 600; color: #ffffff;">Select All</label>
+                                </div>
+                                <button id="combineButton" class="btn btn-secondary" onclick="combineSelectedConversions()" style="padding: 8px 16px; font-size: 14px;">
+                                    Combine Selected
+                                </button>
+                            </div>
+                        `;
+
+                        historyContent.innerHTML = combineButton + history.reverse().map(item => `
+                            <div class="history-item" id="torrent-history-${item.resultsFilename}">
+                                <div class="history-item-header">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <input type="checkbox" class="combine-checkbox" data-filename="${item.resultsFilename}" onchange="updateCombineButton()">
+                                        <div class="history-date">${item.date}</div>
+                                    </div>
+                                    <div class="history-count">${item.successCount}/${item.totalCount} successful</div>
+                                </div>
+                                <div style="color: #ffffff;">Quality: ${item.quality} | Errors: ${item.errorCount} | Size: ${item.totalSize || 'Unknown'}</div>
+                                <div style="font-size: 12px; color: #666;">Sources: ${item.sourceFiles.join(', ')}</div>
+                                <div class="history-actions">
+                                    <button class="history-download" onclick="window.location.href='/api/download-torrent/${item.resultsFilename}'">
+                                        Download Results
+                                    </button>
+                                    ${item.errorsFilename ? `
+                                        <button class="history-download" onclick="window.location.href='/api/download-torrent/${item.errorsFilename}'">
+                                            Download Errors
+                                        </button>
+                                        <button class="history-download" style="background: #2a7a2a;" onclick="viewTorrentErrors('${item.errorsFilename}')">
+                                            View Errors
+                                        </button>
+                                        <button class="history-download" style="background: #f39c12;" onclick="refreshMissing('${item.errorsFilename}', '${item.resultsFilename}', '${item.quality}')">
+                                            Refresh Missing
+                                        </button>
+                                    ` : ''}
+                                    <button class="history-delete" onclick="deleteTorrentHistory('${item.resultsFilename}')">
+                                        Delete
+                                    </button>
+                                </div>
+                                <!-- Progress Bar (Hidden by default) -->
+                                <div id="refresh-progress-${item.resultsFilename}" style="display: none; margin-top: 15px; padding: 15px; background: #2a2a3e; border-radius: 8px;">
+                                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between; color: #fff;">
+                                        <span class="refresh-progress-text">Refreshing...</span>
+                                        <span class="refresh-progress-count">0 / 0</span>
+                                    </div>
+                                    <div style="background: #1a1a2e; border-radius: 4px; height: 20px; overflow: hidden;">
+                                        <div class="refresh-progress-bar" style="background: linear-gradient(135deg, #3a983a 0%, #2a7a2a 100%); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                                    </div>
+                                    <div style="margin-top: 10px; font-size: 12px; color: #ddd;">
+                                        <span class="refresh-newly-found">Found: 0</span> |
+                                        <span class="refresh-still-missing">Missing: 0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+
+                        // Check for active refresh jobs and display progress bars - SUPPORTS MULTIPLE SCANS
+                        const allActiveJobs = getAllActiveRefreshJobs();
+                        allActiveJobs.forEach(activeRefresh => {
+                            if (activeRefresh && activeRefresh.jobId) {
+                                fetch(`/api/refresh-missing/progress/${activeRefresh.jobId}`)
+                                    .then(response => {
+                                        if (response.ok) {
+                                            return response.json();
+                                        }
+                                        return null;
+                                    })
+                                    .then(job => {
+                                        if (job && job.status === 'running') {
+                                            // Show and update progress bar for the active job
+                                            const progressDiv = document.getElementById(`refresh-progress-${job.resultsFilename}`);
+                                            if (progressDiv) {
+                                                progressDiv.style.display = 'block';
+
+                                                const progressBar = progressDiv.querySelector('.refresh-progress-bar');
+                                                const progressText = progressDiv.querySelector('.refresh-progress-text');
+                                                const progressCount = progressDiv.querySelector('.refresh-progress-count');
+                                                const newlyFoundSpan = progressDiv.querySelector('.refresh-newly-found');
+                                                const stillMissingSpan = progressDiv.querySelector('.refresh-still-missing');
+
+                                                const progressPercent = job.total > 0 ? (job.processed / job.total) * 100 : 0;
+                                                progressBar.style.width = progressPercent + '%';
+                                                progressText.textContent = `Checking: ${job.current}`;
+                                                progressCount.textContent = `${job.processed} / ${job.total}`;
+                                                newlyFoundSpan.textContent = `Found: ${job.newlyFound}`;
+                                                stillMissingSpan.textContent = `Missing: ${job.stillMissing}`;
+
+                                                // Resume polling
+                                                pollJobProgress(job.jobId, job.resultsFilename, job.errorsFilename);
+                                                console.log('Automatically resumed polling for active job:', job.jobId);
+                                            }
+                                        } else if (job && job.status === 'completed') {
+                                            // Clear completed job from localStorage
+                                            clearRefreshProgress(activeRefresh.jobId);
+                                        }
+                                })
+                                .catch(error => {
+                                    console.error('Error checking for active job:', error);
+                                });
+                        }
+                    });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading torrent history:', error);
+                    historyContent.innerHTML = '<div class="no-history">Error loading history</div>';
+                });
+        }
+
+        // View torrent errors
+        function viewTorrentErrors(errorsFilename) {
+            // Close the history modal first
+            closeTorrentHistory();
+
+            // Load and display the errors
+            currentErrorFilename = errorsFilename;
+            loadErrorList(errorsFilename);
+        }
+
+        // Delete torrent history entry
+        function deleteTorrentHistory(resultsFilename) {
+            if (!confirm('Are you sure you want to delete this torrent conversion? This will remove both the results and error files.')) {
+                return;
+            }
+
+            fetch(`/api/delete-torrent/${resultsFilename}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the item from the UI
+                    const element = document.getElementById(`torrent-history-${resultsFilename}`);
+                    if (element) {
+                        element.remove();
+                    }
+
+                    // Check if there are any history items left
+                    const historyContent = document.getElementById('torrentHistoryContent');
+                    if (historyContent.querySelectorAll('.history-item').length === 0) {
+                        historyContent.innerHTML = '<div class="no-history">No conversion history yet</div>';
+                    }
+                } else {
+                    alert('Error deleting conversion: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error deleting conversion: ' + error.message);
+                console.error('Error:', error);
+            });
+        }
+
+        // Close torrent history
+        function closeTorrentHistory() {
+            document.getElementById('torrentHistoryModal').classList.remove('active');
+            // Stop checking for active jobs when modal closes
+            if (activeJobCheckInterval) {
+                clearInterval(activeJobCheckInterval);
+                activeJobCheckInterval = null;
+            }
+        }
+
+        // Check and display active jobs - SUPPORTS MULTIPLE SCANS
+        function checkAndDisplayActiveJobs() {
+            const allActiveJobs = getAllActiveRefreshJobs();
+            if (allActiveJobs.length === 0) return;
+
+            allActiveJobs.forEach(activeRefresh => {
+                if (!activeRefresh || !activeRefresh.jobId) return;
+
+                fetch(`/api/refresh-missing/progress/${activeRefresh.jobId}`, {
+                    method: 'GET',
+                    headers: { 'Cache-Control': 'no-cache' }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        return null;
+                    })
+                    .then(job => {
+                        if (job && job.status === 'running') {
+                            const progressDiv = document.getElementById(`refresh-progress-${job.resultsFilename}`);
+                            if (progressDiv) {
+                                progressDiv.style.display = 'block';
+
+                                const progressBar = progressDiv.querySelector('.refresh-progress-bar');
+                                const progressText = progressDiv.querySelector('.refresh-progress-text');
+                                const progressCount = progressDiv.querySelector('.refresh-progress-count');
+                                const newlyFoundSpan = progressDiv.querySelector('.refresh-newly-found');
+                                const stillMissingSpan = progressDiv.querySelector('.refresh-still-missing');
+
+                                if (progressBar && progressText && progressCount) {
+                                    const progressPercent = job.total > 0 ? (job.processed / job.total) * 100 : 0;
+                                    progressBar.style.width = progressPercent + '%';
+                                    progressText.textContent = `Checking: ${job.current}`;
+                                    progressCount.textContent = `${job.processed} / ${job.total}`;
+                                    newlyFoundSpan.textContent = `Found: ${job.newlyFound}`;
+                                    stillMissingSpan.textContent = `Missing: ${job.stillMissing}`;
+                                }
+                            }
+                        } else if (job && job.status === 'completed') {
+                            clearRefreshProgress(activeRefresh.jobId);
+                        }
+                    })
+                    .catch(error => {
+                        console.warn('Error checking for active job:', error.message);
+                    });
+            });
+        }
+
+        // Progress Persistence Helpers - SUPPORTS MULTIPLE CONCURRENT SCANS
+        function saveRefreshProgress(progressData) {
+            const activeJobs = getAllActiveRefreshJobs();
+
+            // Find existing job by jobId and update it, or add new job
+            const existingIndex = activeJobs.findIndex(job => job.jobId === progressData.jobId);
+
+            if (existingIndex !== -1) {
+                activeJobs[existingIndex] = {
+                    ...progressData,
+                    timestamp: Date.now()
+                };
+            } else {
+                activeJobs.push({
+                    ...progressData,
+                    timestamp: Date.now()
+                });
+            }
+
+            localStorage.setItem('activeRefreshJobs', JSON.stringify(activeJobs));
+        }
+
+        function getActiveRefresh() {
+            // For backwards compatibility - returns first active job
+            const jobs = getAllActiveRefreshJobs();
+            return jobs.length > 0 ? jobs[0] : null;
+        }
+
+        function getAllActiveRefreshJobs() {
+            const saved = localStorage.getItem('activeRefreshJobs');
+            if (!saved) return [];
+
+            const jobs = JSON.parse(saved);
+            const now = Date.now();
+
+            // Filter out expired jobs (older than 1 hour)
+            const activeJobs = jobs.filter(job => now - job.timestamp <= 3600000);
+
+            // Update localStorage if we filtered any expired jobs
+            if (activeJobs.length !== jobs.length) {
+                localStorage.setItem('activeRefreshJobs', JSON.stringify(activeJobs));
+            }
+
+            return activeJobs;
+        }
+
+        function getRefreshJobById(jobId) {
+            const jobs = getAllActiveRefreshJobs();
+            return jobs.find(job => job.jobId === jobId) || null;
+        }
+
+        function clearRefreshProgress(jobId = null) {
+            if (jobId) {
+                // Clear specific job
+                const jobs = getAllActiveRefreshJobs();
+                const filteredJobs = jobs.filter(job => job.jobId !== jobId);
+                localStorage.setItem('activeRefreshJobs', JSON.stringify(filteredJobs));
+            } else {
+                // Clear all jobs (backwards compatibility)
+                localStorage.removeItem('activeRefreshJobs');
+            }
+        }
+
+        // NEW: Poll job progress
+        function pollJobProgress(jobId, resultsFilename, errorsFilename) {
+            const progressDiv = document.getElementById(`refresh-progress-${resultsFilename}`);
+            const progressBar = progressDiv.querySelector('.refresh-progress-bar');
+            const progressText = progressDiv.querySelector('.refresh-progress-text');
+            const progressCount = progressDiv.querySelector('.refresh-progress-count');
+            const newlyFoundSpan = progressDiv.querySelector('.refresh-newly-found');
+            const stillMissingSpan = progressDiv.querySelector('.refresh-still-missing');
+
+            let consecutiveErrors = 0;
+            const maxErrors = 3;
+
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/refresh-missing/progress/${jobId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Cache-Control': 'no-cache'
+                        },
+                        signal: AbortSignal.timeout(5000) // 5 second timeout
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            clearInterval(pollInterval);
+                            clearRefreshProgress(jobId);
+                            progressDiv.style.display = 'none';
+                            alert('Refresh job not found. It may have been cancelled or expired.');
+                        }
+                        return;
+                    }
+
+                    const job = await response.json();
+                    consecutiveErrors = 0; // Reset error count on success
+
+                    // Update progress bar
+                    const progressPercent = job.total > 0 ? (job.processed / job.total) * 100 : 0;
+                    progressBar.style.width = progressPercent + '%';
+                    progressText.textContent = `Checking: ${job.current}`;
+                    progressCount.textContent = `${job.processed} / ${job.total}`;
+                    newlyFoundSpan.textContent = `Found: ${job.newlyFound}`;
+                    stillMissingSpan.textContent = `Missing: ${job.stillMissing}`;
+
+                    // Check if complete
+                    if (job.status === 'completed') {
+                        clearInterval(pollInterval);
+                        clearRefreshProgress(jobId);
+                        progressBar.style.width = '100%';
+                        progressText.textContent = 'Complete!';
+                        alert(`Refresh complete!\n\nNewly found: ${job.newlyFound}\nStill missing: ${job.stillMissing}\nAdditional size: ${job.additionalSize || 'Unknown'}\nNew total size: ${job.newTotalSize || 'Unknown'}`);
+                        setTimeout(() => {
+                            progressDiv.style.display = 'none';
+                            openTorrentHistory();
+                            if (currentErrorFilename === errorsFilename) {
+                                loadErrorList(errorsFilename);
+                            }
+                        }, 1000);
+                    } else if (job.status === 'error') {
+                        clearInterval(pollInterval);
+                        clearRefreshProgress(jobId);
+                        progressDiv.style.display = 'none';
+                        alert(`Error: ${job.error}`);
+                    }
+
+                } catch (error) {
+                    consecutiveErrors++;
+                    console.warn(`Polling error (${consecutiveErrors}/${maxErrors}):`, error.message);
+
+                    // Only stop after multiple consecutive errors
+                    if (consecutiveErrors >= maxErrors) {
+                        clearInterval(pollInterval);
+                        clearRefreshProgress(jobId);
+                        progressDiv.style.display = 'none';
+                        alert(`Connection lost after ${maxErrors} attempts. The search may still be running on the server. Try refreshing the page to reconnect.`);
+                    }
+                    // Otherwise, just continue polling - temporary network issues are common
+                }
+            }, 1000); // Poll every second
+        }
+
+        // NEW: Refresh missing movies (using background jobs + polling) - SUPPORTS MULTIPLE SCANS
+        async function refreshMissing(errorsFilename, resultsFilename, quality) {
+            // Check if THIS specific file already has an active job - SUPPORTS MULTIPLE SCANS
+            const allActiveJobs = getAllActiveRefreshJobs();
+            const existingJob = allActiveJobs.find(job => job.resultsFilename === resultsFilename);
+
+            if (existingJob && existingJob.jobId) {
+                // Check if job still exists on backend
+                try {
+                    const response = await fetch(`/api/refresh-missing/progress/${existingJob.jobId}`);
+
+                    if (response.ok) {
+                        const job = await response.json();
+
+                        if (job.status === 'running') {
+                            // Show progress bar for existing job
+                            const progressDiv = document.getElementById(`refresh-progress-${job.resultsFilename}`);
+                            if (progressDiv) {
+                                progressDiv.style.display = 'block';
+
+                                const progressBar = progressDiv.querySelector('.refresh-progress-bar');
+                                const progressText = progressDiv.querySelector('.refresh-progress-text');
+                                const progressCount = progressDiv.querySelector('.refresh-progress-count');
+                                const newlyFoundSpan = progressDiv.querySelector('.refresh-newly-found');
+                                const stillMissingSpan = progressDiv.querySelector('.refresh-still-missing');
+
+                                const progressPercent = job.total > 0 ? (job.processed / job.total) * 100 : 0;
+                                progressBar.style.width = progressPercent + '%';
+                                progressText.textContent = `Checking: ${job.current}`;
+                                progressCount.textContent = `${job.processed} / ${job.total}`;
+                                newlyFoundSpan.textContent = `Found: ${job.newlyFound}`;
+                                stillMissingSpan.textContent = `Missing: ${job.stillMissing}`;
+                            }
+
+                            // Start polling
+                            pollJobProgress(job.jobId, job.resultsFilename, job.errorsFilename);
+                            alert('A refresh is already in progress for this file. Showing current progress...');
+                            return;
+                        } else if (job.status === 'completed') {
+                            // Clear localStorage for this specific job
+                            clearRefreshProgress(existingJob.jobId);
+                            alert(`Previous refresh complete!\n\nFound: ${job.newlyFound}\nMissing: ${job.stillMissing}`);
+                            openTorrentHistory();
+                        }
+                    } else {
+                        // Job not found on backend, clear stale localStorage
+                        clearRefreshProgress(existingJob.jobId);
+                    }
+                } catch (error) {
+                    console.error('Error checking active job:', error);
+                    clearRefreshProgress(existingJob.jobId);
+                }
+            }
+
+            // Start new refresh
+            if (!confirm(`Re-scan all missing movies with the three-tier fallback system?\n\nThis will:\n1. Try YTS API\n2. Try YTS page scraping with IMDB info\n3. Try TorrentDownloads.pro and TorrentDownload.info\n4. Try Torrent-Api-py (torrentproject, kickass, piratebay, glodls, bitsearch, torlock)\n\nThis may take several minutes.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/refresh-missing/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ errorsFilename, resultsFilename, quality, forceQuality: false })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'existing') {
+                    // Job already running
+                    alert('A refresh is already in progress for this file.');
+                    return;
+                }
+
+                const jobId = data.jobId;
+
+                // Save job ID to localStorage
+                saveRefreshProgress({
+                    type: 'refresh',
+                    jobId: jobId,
+                    errorsFilename: errorsFilename,
+                    resultsFilename: resultsFilename,
+                    quality: quality
+                });
+
+                // Show progress bar
+                const progressDiv = document.getElementById(`refresh-progress-${resultsFilename}`);
+                const progressBar = progressDiv.querySelector('.refresh-progress-bar');
+                const progressText = progressDiv.querySelector('.refresh-progress-text');
+                const progressCount = progressDiv.querySelector('.refresh-progress-count');
+                const newlyFoundSpan = progressDiv.querySelector('.refresh-newly-found');
+                const stillMissingSpan = progressDiv.querySelector('.refresh-still-missing');
+
+                progressDiv.style.display = 'block';
+                progressBar.style.width = '0%';
+                progressText.textContent = 'Starting refresh...';
+                progressCount.textContent = '0 / 0';
+                newlyFoundSpan.textContent = 'Found: 0';
+                stillMissingSpan.textContent = 'Missing: 0';
+
+                // Start polling
+                pollJobProgress(jobId, resultsFilename, errorsFilename);
+
+            } catch (error) {
+                clearRefreshProgress();
+                alert('Error starting refresh: ' + error.message);
+            }
+        }
+
+        // Load movie lists when page loads
+        window.addEventListener('load', function() {
+            loadMovieLists();
+            loadClientTypes();
+
+            // Check for active refresh jobs and resume polling - SUPPORTS MULTIPLE SCANS
+            const allActiveJobs = getAllActiveRefreshJobs();
+            allActiveJobs.forEach(activeRefresh => {
+                if (activeRefresh && activeRefresh.jobId) {
+                    // Check if job still exists and is running
+                    fetch(`/api/refresh-missing/progress/${activeRefresh.jobId}`)
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json();
+                            } else {
+                                // Job not found, clear stale localStorage
+                                clearRefreshProgress(activeRefresh.jobId);
+                                return null;
+                            }
+                        })
+                        .then(job => {
+                            if (job && job.status === 'running') {
+                                // Resume polling for the active job
+                                const progressDiv = document.getElementById(`refresh-progress-${job.resultsFilename}`);
+                                if (progressDiv) {
+                                    progressDiv.style.display = 'block';
+
+                                    const progressBar = progressDiv.querySelector('.refresh-progress-bar');
+                                    const progressText = progressDiv.querySelector('.refresh-progress-text');
+                                    const progressCount = progressDiv.querySelector('.refresh-progress-count');
+                                    const newlyFoundSpan = progressDiv.querySelector('.refresh-newly-found');
+                                    const stillMissingSpan = progressDiv.querySelector('.refresh-still-missing');
+
+                                    const progressPercent = job.total > 0 ? (job.processed / job.total) * 100 : 0;
+                                    progressBar.style.width = progressPercent + '%';
+                                    progressText.textContent = `Checking: ${job.current}`;
+                                    progressCount.textContent = `${job.processed} / ${job.total}`;
+                                    newlyFoundSpan.textContent = `Found: ${job.newlyFound}`;
+                                    stillMissingSpan.textContent = `Missing: ${job.stillMissing}`;
+
+                                    // Resume polling
+                                    pollJobProgress(job.jobId, job.resultsFilename, job.errorsFilename);
+                                    console.log('Resumed polling for active refresh job:', job.jobId);
+                                }
+                            } else if (job && job.status === 'completed') {
+                                // Job completed while page was away
+                                clearRefreshProgress(activeRefresh.jobId);
+                                console.log('Found completed refresh job:', job.jobId);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error checking for active refresh job:', error);
+                            clearRefreshProgress(activeRefresh.jobId);
+                        });
+                }
+            });
+        });
+
+        // Download client management
+        let clientTypes = {};
+        let configuredClients = [];
+        let currentClientType = null;
+        let selectedClient = null;
+
+        // Load available client types
+        async function loadClientTypes() {
+            try {
+                const response = await fetch('/api/client-types');
+                clientTypes = await response.json();
+            } catch (error) {
+                console.error('Error loading client types:', error);
+            }
+        }
+
+        // Load configured clients
+        async function loadConfiguredClients() {
+            try {
+                const response = await fetch('/api/download-clients');
+                configuredClients = await response.json();
+                renderConfiguredClients();
+            } catch (error) {
+                console.error('Error loading configured clients:', error);
+            }
+        }
+
+        // Render configured clients list
+        function renderConfiguredClients() {
+            const container = document.getElementById('configuredClientsList');
+
+            if (configuredClients.length === 0) {
+                container.innerHTML = '<div class="no-history">No download clients configured yet</div>';
+            } else {
+                container.innerHTML = configuredClients.map(client => {
+                    const clientConfig = clientTypes[client.type];
+                    return `
+                        <div class="client-button" onclick="openSendToClient('${client.id}', '${client.name}')">
+                            <img src="${clientConfig.logo}" alt="${clientConfig.name}">
+                            <span>${client.name}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Open download manager modal
+        async function openDownloadManager() {
+            await loadConfiguredClients();
+            document.getElementById('downloadManagerModal').classList.add('active');
+        }
+
+        // Close download manager modal
+        function closeDownloadManager() {
+            document.getElementById('downloadManagerModal').classList.remove('active');
+        }
+
+        // Open custom tracker modal
+        function openCustomTrackerModal() {
+            loadCustomTrackers();
+            document.getElementById('customTrackerModal').classList.add('active');
+        }
+
+        // Close custom tracker modal
+        function closeCustomTrackerModal() {
+            document.getElementById('customTrackerModal').classList.remove('active');
+        }
+
+        // Save custom tracker
+        function saveCustomTracker() {
+            const name = document.getElementById('trackerName').value.trim();
+            const url = document.getElementById('trackerUrl').value.trim();
+
+            if (!name || !url) {
+                alert('Please enter both tracker name and URL');
+                return;
+            }
+
+            // Get existing trackers
+            let trackers = JSON.parse(localStorage.getItem('customTrackers') || '[]');
+
+            // Add new tracker
+            trackers.push({
+                id: Date.now(),
+                name: name,
+                url: url
+            });
+
+            // Save to localStorage
+            localStorage.setItem('customTrackers', JSON.stringify(trackers));
+
+            // Clear form
+            document.getElementById('trackerName').value = '';
+            document.getElementById('trackerUrl').value = '';
+
+            // Reload display
+            loadCustomTrackers();
+        }
+
+        // Load and display custom trackers
+        function loadCustomTrackers() {
+            const trackers = JSON.parse(localStorage.getItem('customTrackers') || '[]');
+            const container = document.getElementById('savedTrackers');
+
+            if (trackers.length === 0) {
+                container.innerHTML = '<div style="color: #666; text-align: center;">No custom trackers saved yet</div>';
+                return;
+            }
+
+            container.innerHTML = '<h3 style="margin-bottom: 10px;">Saved Trackers:</h3>' + trackers.map(tracker => `
+                <div style="background: #1a1a1a; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${tracker.name}</strong><br>
+                        <small style="color: #666;">${tracker.url}</small>
+                    </div>
+                    <button class="btn btn-danger" onclick="deleteCustomTracker(${tracker.id})" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        // Delete custom tracker
+        function deleteCustomTracker(id) {
+            let trackers = JSON.parse(localStorage.getItem('customTrackers') || '[]');
+            trackers = trackers.filter(t => t.id !== id);
+            localStorage.setItem('customTrackers', JSON.stringify(trackers));
+            loadCustomTrackers();
+        }
+
+        // Open client selection modal
+        function openClientSelection() {
+            const grid = document.getElementById('clientGrid');
+
+            grid.innerHTML = Object.keys(clientTypes).map(type => {
+                const client = clientTypes[type];
+                return `
+                    <div class="client-card" onclick="selectClientType('${type}')">
+                        <img src="${client.logo}" alt="${client.name}">
+                        <span>${client.name}</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('clientSelectionModal').classList.add('active');
+        }
+
+        // Close client selection modal
+        function closeClientSelection() {
+            document.getElementById('clientSelectionModal').classList.remove('active');
+        }
+
+        // Select client type and open configuration
+        function selectClientType(type) {
+            currentClientType = type;
+            const config = clientTypes[type];
+
+            // Update modal title
+            document.getElementById('clientTypeName').textContent = config.name;
+
+            // Set default port
+            document.getElementById('clientPort').value = config.defaultPort;
+
+            // Reset form
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientHost').value = '';
+            document.getElementById('clientUsername').value = '';
+            document.getElementById('clientPassword').value = '';
+            document.getElementById('clientSsl').checked = false;
+            document.getElementById('saveClientBtn').disabled = true;
+            document.getElementById('testResult').innerHTML = '';
+
+            // Close selection, open config
+            closeClientSelection();
+            document.getElementById('clientConfigModal').classList.add('active');
+        }
+
+        // Close client config modal
+        function closeClientConfig() {
+            document.getElementById('clientConfigModal').classList.remove('active');
+        }
+
+        // Test client connection
+        async function testClientConnection() {
+            const type = currentClientType;
+            const name = document.getElementById('clientName').value.trim();
+            const host = document.getElementById('clientHost').value.trim();
+            const port = parseInt(document.getElementById('clientPort').value);
+            const username = document.getElementById('clientUsername').value.trim();
+            const password = document.getElementById('clientPassword').value;
+            const ssl = document.getElementById('clientSsl').checked;
+
+            if (!name || !host || !port || !username || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const testResult = document.getElementById('testResult');
+            testResult.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const response = await fetch('/api/test-download-client', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type,
+                        host,
+                        port,
+                        username,
+                        password,
+                        ssl
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    testResult.innerHTML = `<div class="test-result success">✓ Connection successful! ${result.client} ${result.version || ''}</div>`;
+                    document.getElementById('saveClientBtn').disabled = false;
+                } else {
+                    testResult.innerHTML = `<div class="test-result error">✗ Connection failed: ${result.error}</div>`;
+                    document.getElementById('saveClientBtn').disabled = true;
+                }
+            } catch (error) {
+                testResult.innerHTML = `<div class="test-result error">✗ Connection failed: ${error.message}</div>`;
+                document.getElementById('saveClientBtn').disabled = true;
+            }
+        }
+
+        // Save client configuration
+        async function saveClient() {
+            const type = currentClientType;
+            const name = document.getElementById('clientName').value.trim();
+            const host = document.getElementById('clientHost').value.trim();
+            const port = parseInt(document.getElementById('clientPort').value);
+            const username = document.getElementById('clientUsername').value.trim();
+            const password = document.getElementById('clientPassword').value;
+            const ssl = document.getElementById('clientSsl').checked;
+
+            try {
+                const response = await fetch('/api/download-clients', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type,
+                        name,
+                        host,
+                        port,
+                        username,
+                        password,
+                        ssl
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Client saved successfully!');
+                    closeClientConfig();
+                    await loadConfiguredClients();
+                } else {
+                    alert('Failed to save client: ' + result.error);
+                }
+            } catch (error) {
+                alert('Failed to save client: ' + error.message);
+            }
+        }
+
+        // Open send to client modal
+        async function openSendToClient(clientId, clientName) {
+            selectedClient = clientId;
+            document.getElementById('selectedClientName').textContent = clientName;
+
+            // Load torrent history to populate list selector
+            try {
+                const response = await fetch('/api/torrent-history');
+                const history = await response.json();
+
+                const select = document.getElementById('torrentListSelect');
+                select.innerHTML = '<option value="">Choose a torrent list...</option>' +
+                    history.map(item => `
+                        <option value="${item.resultsFilename}">${item.date} - ${item.successCount}/${item.totalCount} torrents</option>
+                    `).join('');
+            } catch (error) {
+                console.error('Error loading torrent lists:', error);
+            }
+
+            // Reset form
+            document.getElementById('categoryInput').value = '';
+            document.getElementById('sendProgress').classList.remove('active');
+
+            closeDownloadManager();
+            document.getElementById('sendToClientModal').classList.add('active');
+        }
+
+        // Close send to client modal
+        function closeSendToClient() {
+            document.getElementById('sendToClientModal').classList.remove('active');
+        }
+
+        // Send torrents to client
+        async function sendTorrentsToClient() {
+            const torrentFilename = document.getElementById('torrentListSelect').value;
+            const category = document.getElementById('categoryInput').value.trim();
+
+            if (!torrentFilename) {
+                alert('Please select a torrent list');
+                return;
+            }
+
+            const progressDiv = document.getElementById('sendProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            progressDiv.classList.add('active');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0%';
+            progressText.textContent = 'Sending torrents...';
+
+            try {
+                const response = await fetch('/api/send-to-client', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        clientId: selectedClient,
+                        torrentFilename,
+                        category
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    progressFill.style.width = '100%';
+                    progressFill.textContent = '100%';
+                    progressText.innerHTML = `<strong>Complete!</strong> ${result.added} torrents added successfully, ${result.failed} failed`;
+
+                    if (result.errors && result.errors.length > 0) {
+                        progressText.innerHTML += `<br><small>Errors: ${result.errors.map(e => e.title).join(', ')}</small>`;
+                    }
+                } else {
+                    progressText.innerHTML = `<strong style="color: #ef4444;">Error:</strong> ${result.error}`;
+                }
+            } catch (error) {
+                progressText.innerHTML = `<strong style="color: #ef4444;">Error:</strong> ${error.message}`;
+            }
+        }
+
+        // Close modals on outside click
+        document.getElementById('downloadManagerModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDownloadManager();
+        });
+
+        document.getElementById('clientSelectionModal').addEventListener('click', function(e) {
+            if (e.target === this) closeClientSelection();
+        });
+
+        document.getElementById('clientConfigModal').addEventListener('click', function(e) {
+            if (e.target === this) closeClientConfig();
+        });
+
+        document.getElementById('sendToClientModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSendToClient();
+        });
+    
+        // Toggle Force Quality
+        let forceQuality = false;
+        function toggleForceQuality() {
+            forceQuality = document.getElementById('forceQualityToggle').checked;
+            console.log('Force Quality:', forceQuality);
+        }
+
+        // Toggle Movie Source (TMDB/IMDB)
+        let useIMDB = false;
+        function toggleMovieSource() {
+            useIMDB = document.getElementById('sourceToggle').checked;
+            const title = document.getElementById('movieFinderTitle');
+            if (useIMDB) {
+                title.textContent = 'IMDB Movie Finder';
+            } else {
+                title.textContent = 'TMDB Movie Finder';
+            }
+            console.log('Using IMDB:', useIMDB);
+        }
+
+        // Toggle Dark Mode
+        function toggleDarkMode() {
+            const checkbox = document.getElementById('darkModeToggle');
+            const isDark = checkbox.checked;
+
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+
+            // Save preference to localStorage
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // Load dark mode preference on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModePref = localStorage.getItem('darkMode');
+            const checkbox = document.getElementById('darkModeToggle');
+
+            // Default to dark mode if no preference is set
+            if (darkModePref === null) {
+                document.body.classList.add('dark-mode');
+                checkbox.checked = true;
+                localStorage.setItem('darkMode', true);
+            } else if (darkModePref === 'true') {
+                document.body.classList.add('dark-mode');
+                checkbox.checked = true;
+            }
+            // If darkModePref === 'false', stay in light mode (default HTML state)
+
+            loadTargetListsForManualId();
+
+            // Restore active refresh progress if exists - FETCH from backend API - SUPPORTS MULTIPLE SCANS
+            const allActiveJobs = getAllActiveRefreshJobs();
+            allActiveJobs.forEach(activeRefresh => {
+                if (activeRefresh && activeRefresh.type === 'refresh' && activeRefresh.jobId) {
+                    const progressDiv = document.getElementById(`refresh-progress-${activeRefresh.resultsFilename}`);
+
+                    if (progressDiv) {
+                        progressDiv.style.display = 'block';
+
+                        // FETCH from backend instead of reading localStorage
+                        fetch(`/api/refresh-missing/progress/${activeRefresh.jobId}`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    clearRefreshProgress(activeRefresh.jobId);
+                                    progressDiv.style.display = 'none';
+                                    return null;
+                                }
+                                return response.json();
+                            })
+                            .then(job => {
+                                if (!job) return;
+
+                                const progressBar = progressDiv.querySelector('.refresh-progress-bar');
+                                const progressText = progressDiv.querySelector('.refresh-progress-text');
+                                const progressCount = progressDiv.querySelector('.refresh-progress-count');
+                                const newlyFoundSpan = progressDiv.querySelector('.refresh-newly-found');
+                                const stillMissingSpan = progressDiv.querySelector('.refresh-still-missing');
+
+                                const progressPercent = job.total > 0 ? (job.processed / job.total) * 100 : 0;
+
+                                if (progressBar) progressBar.style.width = progressPercent + '%';
+                                if (progressText) progressText.textContent = `Checking: ${job.current}`;
+                                if (progressCount) progressCount.textContent = `${job.processed} / ${job.total}`;
+                                if (newlyFoundSpan) newlyFoundSpan.textContent = `Found: ${job.newlyFound}`;
+                                if (stillMissingSpan) stillMissingSpan.textContent = `Missing: ${job.stillMissing}`;
+
+                                if (job.status === 'running') {
+                                    pollJobProgress(job.jobId, activeRefresh.resultsFilename, activeRefresh.errorsFilename);
+                                } else if (job.status === 'completed') {
+                                    clearRefreshProgress(activeRefresh.jobId);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching job progress on load:', error);
+                                clearRefreshProgress(activeRefresh.jobId);
+                                progressDiv.style.display = 'none';
+                            });
+                    }
+                }
+            });
+        });
+
+        // Listen for storage changes from other tabs - SUPPORTS MULTIPLE SCANS
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'activeRefreshJobs' && e.newValue) {
+                try {
+                    const allJobs = JSON.parse(e.newValue);
+
+                    allJobs.forEach(activeRefresh => {
+                        if (activeRefresh && activeRefresh.type === 'refresh' && activeRefresh.jobId) {
+                            const progressDiv = document.getElementById(`refresh-progress-${activeRefresh.resultsFilename}`);
+
+                            if (progressDiv) {
+                                fetch(`/api/refresh-missing/progress/${activeRefresh.jobId}`)
+                                    .then(response => response.ok ? response.json() : null)
+                                    .then(job => {
+                                        if (!job) return;
+
+                                        const progressBar = progressDiv.querySelector('.refresh-progress-bar');
+                                        const progressText = progressDiv.querySelector('.refresh-progress-text');
+                                        const progressCount = progressDiv.querySelector('.refresh-progress-count');
+                                        const newlyFoundSpan = progressDiv.querySelector('.refresh-newly-found');
+                                        const stillMissingSpan = progressDiv.querySelector('.refresh-still-missing');
+
+                                        const progressPercent = job.total > 0 ? (job.processed / job.total) * 100 : 0;
+
+                                        progressDiv.style.display = 'block';
+                                        if (progressBar) progressBar.style.width = progressPercent + '%';
+                                        if (progressText) progressText.textContent = `Checking: ${job.current}`;
+                                        if (progressCount) progressCount.textContent = `${job.processed} / ${job.total}`;
+                                        if (newlyFoundSpan) newlyFoundSpan.textContent = `Found: ${job.newlyFound}`;
+                                        if (stillMissingSpan) stillMissingSpan.textContent = `Missing: ${job.stillMissing}`;
+                                    })
+                                    .catch(error => {
+                                        console.error('Error updating progress from storage event:', error);
+                                    });
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error handling storage event:', error);
+                }
+            }
+        });
+
+        // Load available lists for manual ID addition
+        async function loadTargetListsForManualId() {
+            try {
+                const [movieListsResponse, torrentHistoryResponse] = await Promise.all([
+                    fetch('/api/movie-lists'),
+                    fetch('/api/torrent-history')
+                ]);
+
+                const movieLists = await movieListsResponse.json();
+                const torrentHistory = await torrentHistoryResponse.json();
+
+                window.manualIdMovieLists = movieLists;
+                window.manualIdTorrentLists = torrentHistory;
+
+                updateManualIdTargetList();
+            } catch (error) {
+                console.error('Error loading target lists:', error);
+            }
+        }
+
+        // Update target list dropdown based on selected type
+        function updateManualIdTargetList() {
+            const listType = document.getElementById('manualIdListType').value;
+            const targetSelect = document.getElementById('manualIdTargetList');
+
+            targetSelect.innerHTML = '<option value="">Select target list...</option>';
+
+            if (listType === 'movie' && window.manualIdMovieLists) {
+                window.manualIdMovieLists.forEach(list => {
+                    const option = document.createElement('option');
+                    option.value = list.filename;
+                    option.textContent = `${list.displayName} (${list.count} movies)`;
+                    targetSelect.appendChild(option);
+                });
+            } else if (listType === 'torrent' && window.manualIdTorrentLists) {
+                window.manualIdTorrentLists.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.resultsFilename;
+                    option.textContent = `${item.date} - ${item.successCount} torrents`;
+                    targetSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Add manual ID
+        async function addManualId() {
+            const idInput = document.getElementById('manualIdInput');
+            const listType = document.getElementById('manualIdListType').value;
+            const targetList = document.getElementById('manualIdTargetList').value;
+
+            const movieId = idInput.value.trim();
+
+            if (!movieId) {
+                alert('Please enter an IMDB or TMDB ID');
+                return;
+            }
+
+            if (!targetList) {
+                alert('Please select a target list');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/add-movie-id', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        movieId: movieId,
+                        listType: listType,
+                        targetList: targetList
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`Successfully added ${movieId} to ${listType} list`);
+                    idInput.value = '';
+                    loadTargetListsForManualId();
+                } else {
+                    alert('Failed to add ID: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error adding manual ID:', error);
+                alert('Failed to add ID');
+            }
+        }
+
+        // Add event listener to update list when type changes
+        if (document.getElementById('manualIdListType')) {
+            document.getElementById('manualIdListType').addEventListener('change', updateManualIdTargetList);
+        }
+
+        // Toggle select all conversions
+        function toggleSelectAllConversions(checked) {
+            const checkboxes = document.querySelectorAll('.combine-checkbox');
+            checkboxes.forEach(cb => cb.checked = checked);
+            updateCombineButton();
+        }
+
+        // Update combine button state
+        function updateCombineButton() {
+            const checkboxes = document.querySelectorAll('.combine-checkbox:checked');
+            const selectAllCheckbox = document.getElementById('selectAllConversions');
+            const allCheckboxes = document.querySelectorAll('.combine-checkbox');
+            const combineSection = document.getElementById('combineSection');
+
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = checkboxes.length === allCheckboxes.length && allCheckboxes.length > 0;
+            }
+
+            // Show/hide entire combine section based on selection count
+            if (combineSection) {
+                combineSection.style.display = checkboxes.length >= 2 ? 'flex' : 'none';
+            }
+        }
+
+        // Combine selected conversions
+        async function combineSelectedConversions() {
+            const checkboxes = document.querySelectorAll('.combine-checkbox:checked');
+
+            if (checkboxes.length < 2) {
+                alert('Please select at least 2 conversions to combine');
+                return;
+            }
+
+            const selectedFiles = Array.from(checkboxes).map(cb => cb.dataset.filename);
+
+            if (!confirm(`Combine ${selectedFiles.length} torrent conversions into one file?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/combine-conversions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ files: selectedFiles })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`Successfully combined ${selectedFiles.length} conversions!\n\n` +
+                          `Total entries: ${data.totalCount}\n` +
+                          `Unique entries: ${data.uniqueCount}\n` +
+                          `Duplicates removed: ${data.duplicatesRemoved}`);
+
+                    // Reload torrent history
+                    openTorrentHistory();
+                } else {
+                    alert('Failed to combine conversions: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error combining conversions:', error);
+                alert('Failed to combine conversions');
+            }
+        }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB Movie Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .left-panel {
+            width: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .right-panel {
+            width: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 18px;
+        }
+
+        .history-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+
+        .history-btn:hover {
+            background: #5568d3;
+        }
+
+        .main-content {
+            margin-top: 60px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .slider-container {
+            position: relative;
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            width: 100%;
+            cursor: text;
+        }
+
+        .slider-value:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: #ddd;
+            outline: none;
+            padding: 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #667eea;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #667eea;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .counter-display {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            color: white;
+            display: none;
+        }
+
+        .counter-display.active {
+            display: block;
+        }
+
+        .counter-number {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .counter-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .download-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .download-section.active {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .history-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .history-date {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .history-count {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .history-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .history-download {
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .history-download:hover {
+            background: #059669;
+        }
+
+        .history-delete {
+            padding: 8px 16px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .history-delete:hover {
+            background: #dc2626;
+        }
+
+        .no-history {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 16px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            display: inline-block;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .toggle-state {
+            font-size: 14px;
+            color: #999;
+            margin-left: 10px;
+            min-width: 40px;
+        }
+
+        /* Right Panel & Torrent Converter Styles */
+        .right-panel {
+            overflow-y: auto;
+        }
+
+        .torrent-history-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #764ba2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+
+        .torrent-history-btn:hover {
+            background: #653a8a;
+        }
+
+        /* Multi-select dropdown styles */
+        .multi-select-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .multi-select-display {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .multi-select-display:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+
+        .selected-tag {
+            background: #764ba2;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .selected-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .multi-select-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #764ba2;
+            border-radius: 8px;
+            margin-top: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .multi-select-options.active {
+            display: block;
+        }
+
+        .multi-select-option {
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .multi-select-option:hover {
+            background: #f0f0f0;
+        }
+
+        .multi-select-option input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        /* Quality selector styles */
+        .quality-selector-group {
+            margin-bottom: 25px;
+        }
+
+        .quality-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .quality-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .quality-btn.active {
+            background: #764ba2;
+            color: white;
+            border-color: #764ba2;
+        }
+
+        .quality-btn:hover:not(.active) {
+            border-color: #764ba2;
+            color: #764ba2;
+        }
+
+        /* Torrent counter display */
+        .torrent-counter-display {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            border-radius: 12px;
+            color: white;
+            display: none;
+        }
+
+        .torrent-counter-display.active {
+            display: block;
+        }
+
+        .status-message {
+            font-size: 14px;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        /* Error list section */
+        .error-list-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fef2f2;
+            border-radius: 8px;
+            border-left: 4px solid #ef4444;
+            display: none;
+        }
+
+        .error-list-section.active {
+            display: block;
+        }
+
+        .error-list-section h3 {
+            margin-bottom: 10px;
+            color: #ef4444;
+        }
+
+        #errorListContent {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .error-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error-item-info {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .manual-add-btn {
+            padding: 6px 12px;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .manual-add-btn:hover {
+            background: #653a8a;
+        }
+
+        /* Secondary button style */
+        .btn-secondary {
+            background: #764ba2;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #653a8a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+        }
+
+        /* Center download button */
+        .center-download-btn {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .center-download-btn:hover {
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Client grid */
+        .client-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            padding: 20px 0;
+        }
+
+        .client-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .client-card:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .client-card img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 10px;
+        }
+
+        .client-card span {
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Client buttons */
+        .client-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .client-button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .client-button img {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Form groups for modal */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .test-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .test-result.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .test-result.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .info-box {
+            background: #e0e7ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #3730a3;
+            border-left: 4px solid #667eea;
+        }
+
+        .client-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .send-progress {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .send-progress.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <button class="center-download-btn" onclick="openDownloadManager()">Download</button>
+
+    <div class="container">
+        <div class="left-panel">
+            <button class="history-btn" onclick="openHistory()">History</button>
+
+            <div class="main-content">
+                <h1>TMDB Movie Finder</h1>
+
+                <div class="control-group">
+                    <label for="language">Original Language</label>
+                    <select id="language">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ko">Korean</option>
+                        <option value="zh">Chinese</option>
+                        <option value="ru">Russian</option>
+                        <option value="ar">Arabic</option>
+                        <option value="hi">Hindi</option>
+                        <option value="th">Thai</option>
+                        <option value="tr">Turkish</option>
+                        <option value="pl">Polish</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="movieCount">Number of Movies</label>
+                    <div class="slider-container">
+                        <input type="number" class="slider-value" id="sliderValue" min="1" max="10000" value="1">
+                        <input type="range" id="movieCount" min="1" max="10000" value="1">
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <span class="toggle-label">Include Movies in Theaters</span>
+                    <div style="display: flex; align-items: center;">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="includeInTheaters" onchange="updateToggleState()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-state" id="toggleState">OFF</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="findBtn" onclick="findMovies()">Find Movies</button>
+
+                <div class="counter-display" id="counterDisplay">
+                    <div class="counter-label">Movies Found</div>
+                    <div class="counter-number" id="counterNumber">0</div>
+                    <div class="counter-label">of <span id="targetNumber">0</span></div>
+                </div>
+
+                <div class="download-section" id="downloadSection">
+                    <button class="btn btn-success" id="downloadBtn" onclick="downloadList()">Download Movie List</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <button class="torrent-history-btn" onclick="openTorrentHistory()">Torrent History</button>
+
+            <div class="main-content">
+                <h1>Torrent Converter</h1>
+
+                <div class="control-group">
+                    <label>Select Movie Lists to Convert</label>
+                    <div class="multi-select-dropdown" id="movieListsDropdown">
+                        <div class="multi-select-display" id="multiSelectDisplay" onclick="toggleDropdown()">
+                            <span style="color: #999;">Select lists...</span>
+                        </div>
+                        <div class="multi-select-options" id="multiSelectOptions">
+                            <!-- Options populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quality-selector-group">
+                    <label>Preferred Quality</label>
+                    <div class="quality-buttons">
+                        <button class="quality-btn" onclick="selectQuality('480p')">480p</button>
+                        <button class="quality-btn" onclick="selectQuality('720p')">720p</button>
+                        <button class="quality-btn active" onclick="selectQuality('1080p')">1080p</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" id="convertBtn" onclick="convertToTorrents()">Convert to Torrents</button>
+
+                <div class="torrent-counter-display" id="torrentCounterDisplay">
+                    <div class="counter-label">Processing Movies</div>
+                    <div class="counter-number" id="torrentCounterNumber">0</div>
+                    <div class="counter-label">of <span id="torrentTargetNumber">0</span></div>
+                    <div class="status-message" id="torrentStatusMessage"></div>
+                </div>
+
+                <div class="download-section" id="torrentDownloadSection">
+                    <button class="btn btn-success" id="downloadTorrentBtn" onclick="downloadTorrentList()">Download Torrent List</button>
+                </div>
+
+                <div class="error-list-section" id="errorListSection">
+                    <h3 style="color: #ef4444; margin-bottom: 10px;">Missing Movies</h3>
+                    <div id="errorListContent"></div>
+                    <button class="btn btn-success" style="margin-top: 10px;" id="downloadErrorBtn" onclick="downloadErrorList()">Download Error List</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Download History</h2>
+                <button class="close-btn" onclick="closeHistory()">&times;</button>
+            </div>
+            <div id="historyContent">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="torrentHistoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Torrent Conversion History</h2>
+                <button class="close-btn" onclick="closeTorrentHistory()">&times;</button>
+            </div>
+
+            <!-- Refresh Progress Bar -->
+            <div id="refreshProgress" style="display: none; margin: 20px; padding: 15px; background: #2a2a3e; border-radius: 8px;">
+                <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+                    <span id="refreshProgressText">Refreshing...</span>
+                    <span id="refreshProgressCount">0 / 0</span>
+                </div>
+                <div style="background: #1a1a2e; border-radius: 4px; height: 20px; overflow: hidden;">
+                    <div id="refreshProgressBar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: #888;">
+                    <span id="refreshNewlyFound">Found: 0</span> |
+                    <span id="refreshStillMissing">Missing: 0</span>
+                </div>
+            </div>
+
+            <div id="torrentHistoryContent">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="manualMagnetModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Manual Magnet Link</h2>
+                <button class="close-btn" onclick="closeManualMagnet()">&times;</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong id="manualMovieTitle"></strong>
+                <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                    TMDB: <span id="manualTmdbId"></span> | IMDB: <span id="manualImdbId"></span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Magnet Link</label>
+                <textarea id="manualMagnetInput" style="width: 100%; min-height: 100px; padding: 10px; border: 2px solid #ddd; border-radius: 8px;" placeholder="Paste magnet link here..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="submitManualMagnet()">Add Magnet Link</button>
+        </div>
+    </div>
+
+    <!-- Download Manager Modal -->
+    <div class="modal" id="downloadManagerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Download Clients</h2>
+                <button class="close-btn" onclick="closeDownloadManager()">&times;</button>
+            </div>
+
+            <div id="configuredClientsList" class="client-list">
+                <!-- Configured clients will appear here -->
+            </div>
+
+            <button class="btn btn-secondary" onclick="openClientSelection()">+ Add Download Client</button>
+        </div>
+    </div>
+
+    <!-- Client Selection Modal -->
+    <div class="modal" id="clientSelectionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Download Client</h2>
+                <button class="close-btn" onclick="closeClientSelection()">&times;</button>
+            </div>
+
+            <div class="client-grid" id="clientGrid">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Configuration Modal -->
+    <div class="modal" id="clientConfigModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Configure <span id="clientTypeName"></span></h2>
+                <button class="close-btn" onclick="closeClientConfig()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label>Name:</label>
+                <input type="text" id="clientName" placeholder="My qBittorrent">
+            </div>
+
+            <div class="form-group">
+                <label>Host:</label>
+                <input type="text" id="clientHost" placeholder="192.168.1.100 or localhost">
+            </div>
+
+            <div class="form-group">
+                <label>Port:</label>
+                <input type="number" id="clientPort" value="8080">
+            </div>
+
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="clientUsername">
+            </div>
+
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="clientPassword">
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="clientSsl">
+                    Use HTTPS/SSL
+                </label>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="testClientConnection()">Test Connection</button>
+                <button class="btn btn-success" id="saveClientBtn" disabled onclick="saveClient()">Save</button>
+            </div>
+
+            <div id="testResult"></div>
+        </div>
+    </div>
+
+    <!-- Send to Client Modal -->
+    <div class="modal" id="sendToClientModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Send Torrents to <span id="selectedClientName"></span></h2>
+                <button class="close-btn" onclick="closeSendToClient()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label>Select Torrent List:</label>
+                <select id="torrentListSelect">
+                    <option value="">Choose a torrent list...</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="categoryGroup">
+                <label>Category/Label (optional):</label>
+                <input type="text" id="categoryInput" placeholder="Movies">
+                <small style="color: #666;">For clients that support categories (qBittorrent, Deluge, etc.)</small>
+            </div>
+
+            <div class="info-box">
+                Files will be renamed to: "Movie Title (Year) [Quality]"
+            </div>
+
+            <button class="btn btn-primary" onclick="sendTorrentsToClient()">Send to Client</button>
+
+            <div class="send-progress" id="sendProgress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+                </div>
+                <div id="progressText">Sending torrents...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFilename = null;
+        let eventSource = null;
+
+        // Update number input when slider changes
+        document.getElementById('movieCount').addEventListener('input', function() {
+            document.getElementById('sliderValue').value = this.value;
+        });
+
+        // Update slider when number input changes
+        document.getElementById('sliderValue').addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                value = 1;
+            } else if (value > 10000) {
+                value = 10000;
+            }
+            this.value = value;
+            document.getElementById('movieCount').value = value;
+        });
+
+        function updateToggleState() {
+            const checkbox = document.getElementById('includeInTheaters');
+            const stateText = document.getElementById('toggleState');
+            stateText.textContent = checkbox.checked ? 'ON' : 'OFF';
+        }
+
+        function findMovies() {
+            const language = document.getElementById('language').value;
+            const targetCount = parseInt(document.getElementById('movieCount').value);
+            const includeInTheaters = document.getElementById('includeInTheaters').checked;
+            const findBtn = document.getElementById('findBtn');
+            const counterDisplay = document.getElementById('counterDisplay');
+            const counterNumber = document.getElementById('counterNumber');
+            const targetNumber = document.getElementById('targetNumber');
+            const downloadSection = document.getElementById('downloadSection');
+
+            // Reset UI
+            findBtn.disabled = true;
+            counterDisplay.classList.add('active');
+            downloadSection.classList.remove('active');
+            counterNumber.textContent = '0';
+            targetNumber.textContent = targetCount;
+            currentFilename = null;
+
+            // Close existing connection if any
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            // Create SSE connection
+            eventSource = new EventSource(`/api/find-movies?dummy=${Date.now()}`);
+
+            // Send request via fetch POST
+            fetch('/api/find-movies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ language, targetCount, includeInTheaters })
+            }).then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                function read() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            findBtn.disabled = false;
+                            return;
+                        }
+
+                        const text = decoder.decode(value);
+                        const lines = text.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = JSON.parse(line.substring(6));
+
+                                if (data.error) {
+                                    alert('Error: ' + data.error);
+                                    findBtn.disabled = false;
+                                    return;
+                                }
+
+                                if (data.complete) {
+                                    counterNumber.textContent = data.count;
+                                    currentFilename = data.filename;
+                                    downloadSection.classList.add('active');
+                                    findBtn.disabled = false;
+                                } else {
+                                    counterNumber.textContent = data.count;
+                                }
+                            }
+                        }
+
+                        read();
+                    });
+                }
+
+                read();
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+                findBtn.disabled = false;
+            });
+        }
+
+        function downloadList() {
+            if (currentFilename) {
+                window.location.href = `/api/download/${currentFilename}`;
+            }
+        }
+
+        function openHistory() {
+            const modal = document.getElementById('historyModal');
+            const historyContent = document.getElementById('historyContent');
+            modal.classList.add('active');
+
+            historyContent.innerHTML = '<div class="loading-spinner"></div>';
+
+            fetch('/api/history')
+                .then(response => response.json())
+                .then(history => {
+                    if (history.length === 0) {
+                        historyContent.innerHTML = '<div class="no-history">No download history yet</div>';
+                    } else {
+                        historyContent.innerHTML = history.reverse().map(item => `
+                            <div class="history-item" id="history-${item.filename}">
+                                <div class="history-item-header">
+                                    <div class="history-date">${item.date}</div>
+                                    <div class="history-count">${item.count} movies</div>
+                                </div>
+                                <div>Language: ${item.language}</div>
+                                <div class="history-actions">
+                                    <button class="history-download" onclick="downloadHistoryItem('${item.filename}')">
+                                        Download
+                                    </button>
+                                    <button class="history-delete" onclick="deleteHistoryItem('${item.filename}')">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                })
+                .catch(error => {
+                    historyContent.innerHTML = '<div class="no-history">Error loading history</div>';
+                    console.error('Error:', error);
+                });
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').classList.remove('active');
+        }
+
+        function downloadHistoryItem(filename) {
+            window.location.href = `/api/download/${filename}`;
+        }
+
+        function deleteHistoryItem(filename) {
+            if (!confirm('Are you sure you want to delete this list? This will also remove all movie IDs from the global deduplication system.')) {
+                return;
+            }
+
+            fetch(`/api/delete/${filename}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the item from the UI
+                    const element = document.getElementById(`history-${filename}`);
+                    if (element) {
+                        element.remove();
+                    }
+
+                    // Check if there are any history items left
+                    const historyContent = document.getElementById('historyContent');
+                    if (historyContent.querySelectorAll('.history-item').length === 0) {
+                        historyContent.innerHTML = '<div class="no-history">No download history yet</div>';
+                    }
+                } else {
+                    alert('Error deleting list: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error deleting list: ' + error.message);
+                console.error('Error:', error);
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('historyModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHistory();
+            }
+        });
+
+        // Torrent conversion variables
+        let selectedLists = [];
+        let selectedQuality = '1080p';
+        let currentTorrentFilename = null;
+        let currentErrorFilename = null;
+        let availableLists = [];
+
+        // Load movie lists on page load
+        async function loadMovieLists() {
+            try {
+                const response = await fetch('/api/movie-lists');
+                availableLists = await response.json();
+            } catch (error) {
+                console.error('Error loading movie lists:', error);
+            }
+        }
+
+        // Toggle dropdown visibility
+        function toggleDropdown() {
+            const dropdown = document.getElementById('multiSelectOptions');
+            dropdown.classList.toggle('active');
+
+            if (dropdown.classList.contains('active')) {
+                renderDropdownOptions();
+            }
+        }
+
+        // Render dropdown options
+        function renderDropdownOptions() {
+            const optionsDiv = document.getElementById('multiSelectOptions');
+            optionsDiv.innerHTML = availableLists.map(list => `
+                <div class="multi-select-option" onclick="toggleListSelection('${list.filename}', event)">
+                    <input type="checkbox" ${selectedLists.includes(list.filename) ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <span>${list.displayName} (${list.count} movies)</span>
+                </div>
+            `).join('');
+        }
+
+        // Toggle list selection
+        function toggleListSelection(filename, event) {
+            event.stopPropagation();
+
+            const index = selectedLists.indexOf(filename);
+            if (index === -1) {
+                selectedLists.push(filename);
+            } else {
+                selectedLists.splice(index, 1);
+            }
+
+            updateSelectedDisplay();
+            renderDropdownOptions();
+        }
+
+        // Update selected lists display
+        function updateSelectedDisplay() {
+            const display = document.getElementById('multiSelectDisplay');
+
+            if (selectedLists.length === 0) {
+                display.innerHTML = '<span style="color: #999;">Select lists...</span>';
+            } else {
+                display.innerHTML = selectedLists.map(filename => {
+                    const list = availableLists.find(l => l.filename === filename);
+                    const displayName = list ? list.displayName : filename;
+                    return `
+                        <div class="selected-tag">
+                            ${displayName}
+                            <span class="remove" onclick="removeList('${filename}', event)">&times;</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Remove list from selection
+        function removeList(filename, event) {
+            event.stopPropagation();
+            const index = selectedLists.indexOf(filename);
+            if (index !== -1) {
+                selectedLists.splice(index, 1);
+                updateSelectedDisplay();
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('movieListsDropdown');
+            if (dropdown && !dropdown.contains(event.target)) {
+                document.getElementById('multiSelectOptions').classList.remove('active');
+            }
+        });
+
+        // Select quality
+        function selectQuality(quality) {
+            selectedQuality = quality;
+            document.querySelectorAll('.quality-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Convert to torrents
+        function convertToTorrents() {
+            if (selectedLists.length === 0) {
+                alert('Please select at least one movie list');
+                return;
+            }
+
+            const convertBtn = document.getElementById('convertBtn');
+            const counterDisplay = document.getElementById('torrentCounterDisplay');
+            const counterNumber = document.getElementById('torrentCounterNumber');
+            const targetNumber = document.getElementById('torrentTargetNumber');
+            const statusMessage = document.getElementById('torrentStatusMessage');
+            const downloadSection = document.getElementById('torrentDownloadSection');
+            const errorSection = document.getElementById('errorListSection');
+
+            // Reset UI
+            convertBtn.disabled = true;
+            counterDisplay.classList.add('active');
+            downloadSection.classList.remove('active');
+            errorSection.classList.remove('active');
+            counterNumber.textContent = '0';
+            targetNumber.textContent = '0';
+            statusMessage.textContent = 'Initializing...';
+            currentTorrentFilename = null;
+            currentErrorFilename = null;
+
+            // Send conversion request
+            fetch('/api/convert-to-torrents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filenames: selectedLists,
+                    quality: selectedQuality
+                })
+            }).then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                function read() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            convertBtn.disabled = false;
+                            return;
+                        }
+
+                        const text = decoder.decode(value);
+                        const lines = text.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = JSON.parse(line.substring(6));
+
+                                if (data.error) {
+                                    alert('Error: ' + data.error);
+                                    convertBtn.disabled = false;
+                                    counterDisplay.classList.remove('active');
+                                    return;
+                                }
+
+                                if (data.complete) {
+                                    counterNumber.textContent = data.totalCount;
+                                    targetNumber.textContent = data.totalCount;
+                                    statusMessage.textContent = `Complete! ${data.successCount} successful, ${data.errorCount} failed | Total Size: ${data.totalSize}`;
+                                    currentTorrentFilename = data.resultsFilename;
+                                    currentErrorFilename = data.errorsFilename;
+                                    downloadSection.classList.add('active');
+
+                                    if (data.errorCount > 0 && data.errorsFilename) {
+                                        loadErrorList(data.errorsFilename);
+                                    }
+
+                                    convertBtn.disabled = false;
+                                } else {
+                                    counterNumber.textContent = data.processed;
+                                    targetNumber.textContent = data.total;
+                                    const sizeText = data.totalSize ? ` | ${data.totalSize}` : '';
+                                    statusMessage.textContent = `Processing: ${data.current}${sizeText}`;
+                                }
+                            }
+                        }
+
+                        read();
+                    });
+                }
+
+                read();
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+                convertBtn.disabled = false;
+                counterDisplay.classList.remove('active');
+            });
+        }
+
+        // Download torrent list
+        function downloadTorrentList() {
+            if (currentTorrentFilename) {
+                window.location.href = `/api/download-torrent/${currentTorrentFilename}`;
+            }
+        }
+
+        // Download error list
+        function downloadErrorList() {
+            if (currentErrorFilename) {
+                window.location.href = `/api/download-torrent/${currentErrorFilename}`;
+            }
+        }
+
+        // Load error list
+        async function loadErrorList(filename) {
+            try {
+                const response = await fetch(`/api/download-torrent/${filename}`);
+                const text = await response.text();
+                const lines = text.split('\n').slice(1); // Skip header
+
+                const errorSection = document.getElementById('errorListSection');
+                const errorContent = document.getElementById('errorListContent');
+
+                errorContent.innerHTML = lines.filter(l => l.trim()).map(line => {
+                    const parts = line.split('\t');
+                    return `
+                        <div class="error-item">
+                            <div class="error-item-info">
+                                <strong>${parts[1]}</strong> (${parts[4]})<br>
+                                <small>TMDB: ${parts[3]} | IMDB: ${parts[2]} | ${parts[5]}</small>
+                            </div>
+                            <button class="manual-add-btn" onclick="openManualMagnet('${parts[1]}', '${parts[3]}', '${parts[2]}')">
+                                Add Magnet
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+                errorSection.classList.add('active');
+            } catch (error) {
+                console.error('Error loading error list:', error);
+            }
+        }
+
+        // Open manual magnet modal
+        function openManualMagnet(title, tmdbId, imdbId) {
+            document.getElementById('manualMovieTitle').textContent = title;
+            document.getElementById('manualTmdbId').textContent = tmdbId;
+            document.getElementById('manualImdbId').textContent = imdbId;
+            document.getElementById('manualMagnetInput').value = '';
+            document.getElementById('manualMagnetModal').classList.add('active');
+        }
+
+        // Close manual magnet modal
+        function closeManualMagnet() {
+            document.getElementById('manualMagnetModal').classList.remove('active');
+        }
+
+        // Submit manual magnet
+        async function submitManualMagnet() {
+            const magnetLink = document.getElementById('manualMagnetInput').value.trim();
+            const tmdbId = document.getElementById('manualTmdbId').textContent;
+
+            if (!magnetLink.startsWith('magnet:')) {
+                alert('Invalid magnet link');
+                return;
+            }
+
+            try {
+                await fetch('/api/add-manual-magnet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        errorsFilename: currentErrorFilename,
+                        tmdbId: tmdbId,
+                        magnetLink: magnetLink
+                    })
+                });
+
+                alert('Magnet link added successfully!');
+                closeManualMagnet();
+                if (currentErrorFilename) {
+                    loadErrorList(currentErrorFilename);
+                }
+            } catch (error) {
+                console.error('Error adding manual magnet:', error);
+                alert('Failed to add magnet link');
+            }
+        }
+
+        // Open torrent history
+        function openTorrentHistory() {
+            const modal = document.getElementById('torrentHistoryModal');
+            const historyContent = document.getElementById('torrentHistoryContent');
+            modal.classList.add('active');
+
+            historyContent.innerHTML = '<div class="loading-spinner"></div>';
+
+            fetch('/api/torrent-history')
+                .then(response => response.json())
+                .then(history => {
+                    if (history.length === 0) {
+                        historyContent.innerHTML = '<div class="no-history">No conversion history yet</div>';
+                    } else {
+                        historyContent.innerHTML = history.reverse().map(item => `
+                            <div class="history-item" id="torrent-history-${item.resultsFilename}">
+                                <div class="history-item-header">
+                                    <div class="history-date">${item.date}</div>
+                                    <div class="history-count">${item.successCount}/${item.totalCount} successful</div>
+                                </div>
+                                <div>Quality: ${item.quality} | Errors: ${item.errorCount} | Size: ${item.totalSize || 'Unknown'}</div>
+                                <div style="font-size: 12px; color: #666;">Sources: ${item.sourceFiles.join(', ')}</div>
+                                <div class="history-actions">
+                                    <button class="history-download" onclick="window.location.href='/api/download-torrent/${item.resultsFilename}'">
+                                        Download Results
+                                    </button>
+                                    ${item.errorsFilename ? `
+                                        <button class="history-download" onclick="window.location.href='/api/download-torrent/${item.errorsFilename}'">
+                                            Download Errors
+                                        </button>
+                                        <button class="history-download" style="background: #764ba2;" onclick="viewTorrentErrors('${item.errorsFilename}')">
+                                            View Errors
+                                        </button>
+                                        <button class="history-download" style="background: #f39c12;" onclick="refreshMissing('${item.errorsFilename}', '${item.resultsFilename}', '${item.quality}')">
+                                            Refresh Missing
+                                        </button>
+                                    ` : ''}
+                                    <button class="history-delete" onclick="deleteTorrentHistory('${item.resultsFilename}')">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading torrent history:', error);
+                    historyContent.innerHTML = '<div class="no-history">Error loading history</div>';
+                });
+        }
+
+        // View torrent errors
+        function viewTorrentErrors(errorsFilename) {
+            // Close the history modal first
+            closeTorrentHistory();
+
+            // Load and display the errors
+            currentErrorFilename = errorsFilename;
+            loadErrorList(errorsFilename);
+        }
+
+        // Delete torrent history entry
+        function deleteTorrentHistory(resultsFilename) {
+            if (!confirm('Are you sure you want to delete this torrent conversion? This will remove both the results and error files.')) {
+                return;
+            }
+
+            fetch(`/api/delete-torrent/${resultsFilename}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the item from the UI
+                    const element = document.getElementById(`torrent-history-${resultsFilename}`);
+                    if (element) {
+                        element.remove();
+                    }
+
+                    // Check if there are any history items left
+                    const historyContent = document.getElementById('torrentHistoryContent');
+                    if (historyContent.querySelectorAll('.history-item').length === 0) {
+                        historyContent.innerHTML = '<div class="no-history">No conversion history yet</div>';
+                    }
+                } else {
+                    alert('Error deleting conversion: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error deleting conversion: ' + error.message);
+                console.error('Error:', error);
+            });
+        }
+
+        // Close torrent history
+        function closeTorrentHistory() {
+            document.getElementById('torrentHistoryModal').classList.remove('active');
+        }
+
+        // Refresh missing movies
+        async function refreshMissing(errorsFilename, resultsFilename, quality) {
+            if (!confirm(`Re-scan all missing movies with the three-tier fallback system?\n\nThis will:\n1. Try YTS API\n2. Try YTS page scraping with IMDB info\n3. Try Torrent-Api-py (torrentproject, kickass, piratebay, glodls, bitsearch, torlock)\n\nThis may take several minutes.`)) {
+                return;
+            }
+
+            // Show progress bar
+            const progressDiv = document.getElementById('refreshProgress');
+            const progressBar = document.getElementById('refreshProgressBar');
+            const progressText = document.getElementById('refreshProgressText');
+            const progressCount = document.getElementById('refreshProgressCount');
+            const newlyFoundSpan = document.getElementById('refreshNewlyFound');
+            const stillMissingSpan = document.getElementById('refreshStillMissing');
+
+            progressDiv.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Starting refresh...';
+            progressCount.textContent = '0 / 0';
+            newlyFoundSpan.textContent = 'Found: 0';
+            stillMissingSpan.textContent = 'Missing: 0';
+
+            try {
+                const response = await fetch('/api/refresh-missing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ errorsFilename, resultsFilename, quality })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.substring(6));
+
+                            if (data.error) {
+                                alert('Error: ' + data.error);
+                                progressDiv.style.display = 'none';
+                                return;
+                            }
+
+                            if (data.complete) {
+                                progressBar.style.width = '100%';
+                                progressText.textContent = 'Complete!';
+                                alert(`Refresh complete!\n\nNewly found: ${data.newlyFound}\nStill missing: ${data.stillMissing}\nAdditional size: ${data.additionalSize}\nNew total size: ${data.newTotalSize}`);
+                                setTimeout(() => {
+                                    progressDiv.style.display = 'none';
+                                    openTorrentHistory();
+                                    if (currentErrorFilename === errorsFilename) {
+                                        loadErrorList(errorsFilename);
+                                    }
+                                }, 1000);
+                                return;
+                            } else {
+                                const percent = (data.processed / data.total) * 100;
+                                progressBar.style.width = percent + '%';
+                                progressCount.textContent = `${data.processed} / ${data.total}`;
+                                progressText.textContent = `Checking: ${data.current}`;
+                                newlyFoundSpan.textContent = `Found: ${data.newlyFound}`;
+                                stillMissingSpan.textContent = `Missing: ${data.stillMissing}`;
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                progressDiv.style.display = 'none';
+            }
+        }
+
+        // Load movie lists when page loads
+        window.addEventListener('load', function() {
+            loadMovieLists();
+            loadClientTypes();
+        });
+
+        // Download client management
+        let clientTypes = {};
+        let configuredClients = [];
+        let currentClientType = null;
+        let selectedClient = null;
+
+        // Load available client types
+        async function loadClientTypes() {
+            try {
+                const response = await fetch('/api/client-types');
+                clientTypes = await response.json();
+            } catch (error) {
+                console.error('Error loading client types:', error);
+            }
+        }
+
+        // Load configured clients
+        async function loadConfiguredClients() {
+            try {
+                const response = await fetch('/api/download-clients');
+                configuredClients = await response.json();
+                renderConfiguredClients();
+            } catch (error) {
+                console.error('Error loading configured clients:', error);
+            }
+        }
+
+        // Render configured clients list
+        function renderConfiguredClients() {
+            const container = document.getElementById('configuredClientsList');
+
+            if (configuredClients.length === 0) {
+                container.innerHTML = '<div class="no-history">No download clients configured yet</div>';
+            } else {
+                container.innerHTML = configuredClients.map(client => {
+                    const clientConfig = clientTypes[client.type];
+                    return `
+                        <div class="client-button" onclick="openSendToClient('${client.id}', '${client.name}')">
+                            <img src="${clientConfig.logo}" alt="${clientConfig.name}">
+                            <span>${client.name}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Open download manager modal
+        async function openDownloadManager() {
+            await loadConfiguredClients();
+            document.getElementById('downloadManagerModal').classList.add('active');
+        }
+
+        // Close download manager modal
+        function closeDownloadManager() {
+            document.getElementById('downloadManagerModal').classList.remove('active');
+        }
+
+        // Open client selection modal
+        function openClientSelection() {
+            const grid = document.getElementById('clientGrid');
+
+            grid.innerHTML = Object.keys(clientTypes).map(type => {
+                const client = clientTypes[type];
+                return `
+                    <div class="client-card" onclick="selectClientType('${type}')">
+                        <img src="${client.logo}" alt="${client.name}">
+                        <span>${client.name}</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('clientSelectionModal').classList.add('active');
+        }
+
+        // Close client selection modal
+        function closeClientSelection() {
+            document.getElementById('clientSelectionModal').classList.remove('active');
+        }
+
+        // Select client type and open configuration
+        function selectClientType(type) {
+            currentClientType = type;
+            const config = clientTypes[type];
+
+            // Update modal title
+            document.getElementById('clientTypeName').textContent = config.name;
+
+            // Set default port
+            document.getElementById('clientPort').value = config.defaultPort;
+
+            // Reset form
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientHost').value = '';
+            document.getElementById('clientUsername').value = '';
+            document.getElementById('clientPassword').value = '';
+            document.getElementById('clientSsl').checked = false;
+            document.getElementById('saveClientBtn').disabled = true;
+            document.getElementById('testResult').innerHTML = '';
+
+            // Close selection, open config
+            closeClientSelection();
+            document.getElementById('clientConfigModal').classList.add('active');
+        }
+
+        // Close client config modal
+        function closeClientConfig() {
+            document.getElementById('clientConfigModal').classList.remove('active');
+        }
+
+        // Test client connection
+        async function testClientConnection() {
+            const type = currentClientType;
+            const name = document.getElementById('clientName').value.trim();
+            const host = document.getElementById('clientHost').value.trim();
+            const port = parseInt(document.getElementById('clientPort').value);
+            const username = document.getElementById('clientUsername').value.trim();
+            const password = document.getElementById('clientPassword').value;
+            const ssl = document.getElementById('clientSsl').checked;
+
+            if (!name || !host || !port || !username || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const testResult = document.getElementById('testResult');
+            testResult.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const response = await fetch('/api/test-download-client', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type,
+                        host,
+                        port,
+                        username,
+                        password,
+                        ssl
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    testResult.innerHTML = `<div class="test-result success">✓ Connection successful! ${result.client} ${result.version || ''}</div>`;
+                    document.getElementById('saveClientBtn').disabled = false;
+                } else {
+                    testResult.innerHTML = `<div class="test-result error">✗ Connection failed: ${result.error}</div>`;
+                    document.getElementById('saveClientBtn').disabled = true;
+                }
+            } catch (error) {
+                testResult.innerHTML = `<div class="test-result error">✗ Connection failed: ${error.message}</div>`;
+                document.getElementById('saveClientBtn').disabled = true;
+            }
+        }
+
+        // Save client configuration
+        async function saveClient() {
+            const type = currentClientType;
+            const name = document.getElementById('clientName').value.trim();
+            const host = document.getElementById('clientHost').value.trim();
+            const port = parseInt(document.getElementById('clientPort').value);
+            const username = document.getElementById('clientUsername').value.trim();
+            const password = document.getElementById('clientPassword').value;
+            const ssl = document.getElementById('clientSsl').checked;
+
+            try {
+                const response = await fetch('/api/download-clients', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type,
+                        name,
+                        host,
+                        port,
+                        username,
+                        password,
+                        ssl
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Client saved successfully!');
+                    closeClientConfig();
+                    await loadConfiguredClients();
+                } else {
+                    alert('Failed to save client: ' + result.error);
+                }
+            } catch (error) {
+                alert('Failed to save client: ' + error.message);
+            }
+        }
+
+        // Open send to client modal
+        async function openSendToClient(clientId, clientName) {
+            selectedClient = clientId;
+            document.getElementById('selectedClientName').textContent = clientName;
+
+            // Load torrent history to populate list selector
+            try {
+                const response = await fetch('/api/torrent-history');
+                const history = await response.json();
+
+                const select = document.getElementById('torrentListSelect');
+                select.innerHTML = '<option value="">Choose a torrent list...</option>' +
+                    history.map(item => `
+                        <option value="${item.resultsFilename}">${item.date} - ${item.successCount}/${item.totalCount} torrents</option>
+                    `).join('');
+            } catch (error) {
+                console.error('Error loading torrent lists:', error);
+            }
+
+            // Reset form
+            document.getElementById('categoryInput').value = '';
+            document.getElementById('sendProgress').classList.remove('active');
+
+            closeDownloadManager();
+            document.getElementById('sendToClientModal').classList.add('active');
+        }
+
+        // Close send to client modal
+        function closeSendToClient() {
+            document.getElementById('sendToClientModal').classList.remove('active');
+        }
+
+        // Send torrents to client
+        async function sendTorrentsToClient() {
+            const torrentFilename = document.getElementById('torrentListSelect').value;
+            const category = document.getElementById('categoryInput').value.trim();
+
+            if (!torrentFilename) {
+                alert('Please select a torrent list');
+                return;
+            }
+
+            const progressDiv = document.getElementById('sendProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            progressDiv.classList.add('active');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0%';
+            progressText.textContent = 'Sending torrents...';
+
+            try {
+                const response = await fetch('/api/send-to-client', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        clientId: selectedClient,
+                        torrentFilename,
+                        category
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    progressFill.style.width = '100%';
+                    progressFill.textContent = '100%';
+                    progressText.innerHTML = `<strong>Complete!</strong> ${result.added} torrents added successfully, ${result.failed} failed`;
+
+                    if (result.errors && result.errors.length > 0) {
+                        progressText.innerHTML += `<br><small>Errors: ${result.errors.map(e => e.title).join(', ')}</small>`;
+                    }
+                } else {
+                    progressText.innerHTML = `<strong style="color: #ef4444;">Error:</strong> ${result.error}`;
+                }
+            } catch (error) {
+                progressText.innerHTML = `<strong style="color: #ef4444;">Error:</strong> ${error.message}`;
+            }
+        }
+
+        // Close modals on outside click
+        document.getElementById('downloadManagerModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDownloadManager();
+        });
+
+        document.getElementById('clientSelectionModal').addEventListener('click', function(e) {
+            if (e.target === this) closeClientSelection();
+        });
+
+        document.getElementById('clientConfigModal').addEventListener('click', function(e) {
+            if (e.target === this) closeClientConfig();
+        });
+
+        document.getElementById('sendToClientModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSendToClient();
+        });
+    </script>
+</body>
+</html>

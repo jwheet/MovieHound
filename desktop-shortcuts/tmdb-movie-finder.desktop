@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=TMDB Movie Finder
+Comment=Open TMDB Movie Finder in browser
+Exec=xdg-open http://localhost:8321
+Icon=video-x-generic
+Terminal=false
+Categories=AudioVideo;Video;Network;
+StartupNotify=false

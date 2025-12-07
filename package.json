@@ -1,0 +1,36 @@
+{
+  "name": "tmdb-movie-finder",
+  "version": "1.0.0",
+  "description": "A powerful movie torrent finder that searches TMDB/IMDB and multiple torrent sources with automatic quality detection and qBittorrent integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "torrent-api": "cd Torrent-Api-py && python3 main.py"
+  },
+  "keywords": [
+    "tmdb",
+    "imdb",
+    "torrent",
+    "movie",
+    "finder",
+    "yts",
+    "qbittorrent",
+    "automation"
+  ],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/tmdb-movie-finder.git"
+  }
+}

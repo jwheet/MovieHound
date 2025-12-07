@@ -1,0 +1,23 @@
+[Unit]
+Description=Torrent API Backend (Python)
+After=network.target
+
+[Service]
+Type=simple
+# Replace <ABSOLUTE_PATH_TO_PROJECT> with the absolute path to the tmdb-movie-finder-github directory
+# e.g., /home/user/tmdb-movie-finder-github
+WorkingDirectory=<ABSOLUTE_PATH_TO_PROJECT>/Torrent-Api-py
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=<ABSOLUTE_PATH_TO_PROJECT>/Torrent-Api-py/api-py/bin/python <ABSOLUTE_PATH_TO_PROJECT>/Torrent-Api-py/main.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=torrent-api
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

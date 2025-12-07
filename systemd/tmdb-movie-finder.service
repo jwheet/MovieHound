@@ -1,0 +1,24 @@
+[Unit]
+Description=TMDB Movie Finder Server
+After=network.target
+
+[Service]
+Type=simple
+# Replace <ABSOLUTE_PATH_TO_PROJECT> with the absolute path to the tmdb-movie-finder-github directory
+# e.g., /home/user/tmdb-movie-finder-github
+WorkingDirectory=<ABSOLUTE_PATH_TO_PROJECT>
+Environment="NODE_ENV=production"
+EnvironmentFile=<ABSOLUTE_PATH_TO_PROJECT>/.env
+ExecStart=/usr/bin/node <ABSOLUTE_PATH_TO_PROJECT>/server.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tmdb-movie-finder
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
