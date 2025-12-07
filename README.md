@@ -423,9 +423,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Disclaimer
 
+This tool is for educational purposes only. Users are responsible for ensuring their use complies with local laws and regulations. The developers do not condone or encourage piracy.
 
 ---
-
                                         ==                                                      
                                       =======                                                   
                                    ===========                                                  
@@ -484,5 +484,3 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
                      /\__|    |\     /|   Y  \  ___/\  ___/|  |  
                      \________| \/\_/ |___|  /\___  >\___  >__|  
                                        \/     \/     \/      
-
-This tool is for educational purposes only. Users are responsible for ensuring their use complies with local laws and regulations. The developers do not condone or encourage piracy.
