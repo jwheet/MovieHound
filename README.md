@@ -1,4 +1,4 @@
-# TMDB Movie Finder
+# MovieHound
 
 A powerful movie torrent finder that searches TMDB/IMDB and multiple torrent sources with automatic quality detection and qBittorrent integration.
 
